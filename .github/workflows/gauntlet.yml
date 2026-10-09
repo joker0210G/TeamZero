@@ -1,0 +1,53 @@
+name: TeamZero Merge Gauntlet
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gauntlet:
+    name: Three-Receipt Cryptographic Gauntlet
+    runs-on: ubuntu-latest
+    env:
+      TZ_SERVER_SECRET: ${{ secrets.TZ_SERVER_SECRET }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pyyaml mcp
+
+      - name: Gate 1 - Anti-Slop Secret & Health Audit
+        run: |
+          python tz.py audit
+
+      - name: Gate 2 - Deterministic Quality Gauntlet
+        run: |
+          python tz.py gauntlet
+
+      - name: Gate 3 - L1 Red Team Breaker Run (Live Code)
+        run: |
+          python tz.py breaker
+
+      - name: Gate 4 - War Game Campaign Sentinel
+        run: |
+          python tz.py wargame
+
+      - name: Gate 5 - Cryptographic Merge Gate Verification
+        run: |
+          python tz.py check-merge

@@ -1,0 +1,7 @@
+{"agent_id": "engineer:claude-3-5-sonnet", "trust_score": 100, "autonomy_level": 2, "updated_at": "2026-10-09T00:00:00Z", "reason": "Initial onboarding"}
+{"agent_id": "engineer:llama-3.3-70b", "trust_score": 95, "autonomy_level": 2, "updated_at": "2026-10-09T00:00:00Z", "reason": "Initial onboarding"}
+{"agent_id": "mcp:cursor-client", "trust_score": 100, "autonomy_level": 2, "updated_at": "2026-10-09T00:00:00Z", "reason": "Initial onboarding"}
+{"agent_id": "mcp:antigravity-client", "trust_score": 100, "autonomy_level": 2, "updated_at": "2026-10-09T00:00:00Z", "reason": "Initial onboarding"}
+{"agent_id": "redteam:breaker", "trust_score": 100, "autonomy_level": 5, "updated_at": "2026-10-09T00:00:00Z", "reason": "Internal red team sentinel"}
+{"agent_id": "engineer:demo-agent", "trust_score": 95, "autonomy_level": 3, "updated_at": "2026-10-09T16:58:15Z", "reason": "[-5] Breaker caught defects on a1b2c3d4"}
+{"agent_id": "engineer:claude-3-5-sonnet", "trust_score": 100, "autonomy_level": 3, "updated_at": "2026-10-09T17:41:36Z", "reason": "[+2] Breaker PASS on 11223344"}

@@ -1,0 +1,58 @@
+{
+  "spec_id": "SPEC-REFUND-001",
+  "feature": "Customer Refund Calculation",
+  "module": "teamzero.refund_service",
+  "function": "calculate_refund",
+  "params": {
+    "amount_paid": "float",
+    "days_since_purchase": "int",
+    "item_condition": "string"
+  },
+  "decision_table": [
+    {
+      "id": "R1",
+      "description": "Unopened item within 30 days receives full refund",
+      "when": {
+        "days_since_purchase": { "op": "<=", "limit": 30, "type": "int" },
+        "item_condition": { "eq": "unopened" }
+      },
+      "then": {
+        "refund_multiple": 1.0,
+        "rule_id": "R1"
+      }
+    },
+    {
+      "id": "R2",
+      "description": "Opened item within 30 days receives 80% refund",
+      "when": {
+        "days_since_purchase": { "op": "<=", "limit": 30, "type": "int" },
+        "item_condition": { "eq": "opened" }
+      },
+      "then": {
+        "refund_multiple": 0.8,
+        "rule_id": "R2"
+      }
+    },
+    {
+      "id": "R3",
+      "description": "Purchases beyond 30 days receive no refund",
+      "when": {
+        "days_since_purchase": { "op": ">", "limit": 30, "type": "int" }
+      },
+      "then": {
+        "refund_multiple": 0.0,
+        "rule_id": "R3"
+      }
+    }
+  ],
+  "invariants": [
+    "result['refund'] >= 0.0",
+    "result['refund'] <= args['amount_paid']",
+    "isinstance(result['refund'], (int, float))"
+  ],
+  "traps": [
+    "Operator boundary: <= 30 must not be coded as < 30",
+    "Negative amount_paid or days_since_purchase must raise ValueError",
+    "Empty or invalid item_condition must be validated"
+  ]
+}

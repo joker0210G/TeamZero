@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment & Keys
+.env
+.venv
+env/
+venv/
+.teamzero/.mintkey
+
+# Scratch & Scraper Dumps
+scratch/
+last_turn.txt
+*.tmp
+glm_output.md
+teamzero_chat_raw.json
+dump_teamzero_chat.py

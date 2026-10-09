@@ -1,0 +1,49 @@
+{
+  "task_id": "TASK-REFUND-CLEAN-001",
+  "commit_sha": "112233445566",
+  "verdict": "PASS",
+  "summary": {
+    "total_findings": 4,
+    "critical": 0,
+    "high": 0,
+    "medium": 4,
+    "low": 0
+  },
+  "receipt": "TZ-39d779ea68648137e12fa9ff",
+  "issued_at": 1791567696.1313212,
+  "token_usage": 0,
+  "findings": [
+    {
+      "fid": "MUT-SURVIVOR-aa4420d4",
+      "phase": "Phase C (Mutations)",
+      "severity": "medium",
+      "title": "Semantic Mutant Survived Probing",
+      "evidence": "Mutant '<' -> '<=' survived all test probes. (Exposes potential test assertion blind spot)",
+      "repro": ""
+    },
+    {
+      "fid": "MUT-SURVIVOR-745c5b43",
+      "phase": "Phase C (Mutations)",
+      "severity": "medium",
+      "title": "Semantic Mutant Survived Probing",
+      "evidence": "Mutant '>' -> '>=' survived all test probes. (Exposes potential test assertion blind spot)",
+      "repro": ""
+    },
+    {
+      "fid": "MUT-SURVIVOR-66cde0c0",
+      "phase": "Phase C (Mutations)",
+      "severity": "medium",
+      "title": "Semantic Mutant Survived Probing",
+      "evidence": "Mutant '.strip()' -> '' survived all test probes. (Exposes potential test assertion blind spot)",
+      "repro": ""
+    },
+    {
+      "fid": "MUT-SURVIVOR-2b63e2b5",
+      "phase": "Phase C (Mutations)",
+      "severity": "medium",
+      "title": "Semantic Mutant Survived Probing",
+      "evidence": "Mutant '.lower()' -> '' survived all test probes. (Exposes potential test assertion blind spot)",
+      "repro": ""
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "teamzero": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "env": {
+        "TZ_SERVER_SECRET": "teamzero-sovereign-master-key-2026",
+        "PYTHONIOENCODING": "utf-8"
+      }
+    }
+  }
+}

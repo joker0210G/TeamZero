@@ -1,0 +1,102 @@
+# TeamZero Quality Constitution
+# Version: 1.0.0
+# The machine-enforced governance layer of TeamZero.
+# Invariant: CI and the pipeline enforce this constitution. Agents cannot modify this file.
+
+organization:
+  name: "TeamZero"
+  mode: "Solo Founder + Autonomous Agents"
+  version: "1.0.0"
+
+invariants:
+  - id: INV-01
+    name: "Generator Never Verifies"
+    rule: "Author agent and reviewer/QA agent must execute on distinct prompts and/or model families."
+  - id: INV-02
+    name: "QA Sees The Spec, Never The Diff"
+    rule: "Acceptance tests are authored strictly against the specification, preventing confirmation bias on implementations."
+  - id: INV-03
+    name: "Done Is Computed, Never Asserted"
+    rule: "Tasks cannot be set to 'done' by any agent or client. Status is computed by the automated pipeline."
+  - id: INV-04
+    name: "Zero Secrets In Sandbox & Protected Constitution"
+    rule: "Execution sandboxes hold no production credentials. Protected paths (.teamzero/constitution*, .github/workflows/*) cannot be modified by agents."
+  - id: INV-05
+    name: "Failure Has A Price"
+    rule: "Failed gates and red-team catches deduct from task token budget and decay agent trust scores."
+
+governance:
+  max_repair_attempts: 3
+  founder_escalation_on_exhaustion: true
+  token_budget_governor:
+    max_tokens_per_task: 35000
+    redteam_budget_cap_pct: 10
+    default_autonomy_level: 2 # Level 0 (suggest only) to Level 5 (ship and notify)
+  threat_model_boundary:
+    mint_authority: "In bootstrap mode, founder environment holds TZ_SERVER_SECRET. In production/remote mode, CI secret is the exclusive mint authority. Agents never possess or receive TZ_SERVER_SECRET."
+    remote_enforcement_trigger: "Remote branch protection becomes non-bypassable condition the moment external agents or MCP clients gain repository write access."
+
+merge_gauntlet:
+  deterministic_gates:
+    - id: gate_syntax_lint
+      name: "Syntax & Lint Verification"
+      command: "python -m py_compile {files}"
+      blocking: true
+    - id: gate_unit_tests
+      name: "Automated Test Suite"
+      command: "python -m pytest -q tests/"
+      blocking: true
+    - id: gate_coverage
+      name: "Diff Coverage Floor"
+      diff_coverage_floor_pct: 100
+      total_coverage_floor_pct: 80
+      blocking: true
+    - id: gate_secret_scan
+      name: "Secret & Credential Scan"
+      patterns:
+        - "(?i)(api[_-]?key|secret|token|password|bearer)\\s*[:=]\\s*['\"][A-Za-z0-9_\\-]{8,}['\"]"
+        - "(?i)-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"
+      blocking: true
+    - id: gate_dependency_probation
+      name: "Slopsquatting & Dependency Verification"
+      rules:
+        - "No hallucinated or unpinned packages in requirements"
+        - "New packages require verification (age >= 90 days, download count > 10000)"
+      blocking: true
+    - id: gate_architecture_fitness
+      name: "Architecture & Layer Boundaries"
+      forbidden_imports:
+        - from: "teamzero.domain"
+          to: "teamzero.infrastructure"
+      blocking: true
+
+red_team:
+  l1_spec_prober:
+    enabled: true
+    budget_tokens: 2500
+    risk_patterns:
+      - "\\b(auth|password|token|secret|pay|price|charge|refund|round|expire|timeout|thread|lock|async|requests|http)\\b"
+    boundary_sweep:
+      int: [0, 1, -1, 29, 30, 31, 2147483647, -2147483648]
+      float: [0.0, 0.001, -0.01, 1.0, 1000000.0, -1000000.0]
+      string: ["", " ", "null", "None", "0", "ünïcödé", "xxxxxxxxxxxxxxxxxxxx"]
+  l2_context_poisoning:
+    enabled: true
+    protected_paths:
+      - ".teamzero/constitution.yaml"
+      - ".teamzero/memory/adr/*"
+      - ".teamzero/memory/map/*"
+      - ".teamzero/ledger/*"
+      - ".github/workflows/*"
+    poison_patterns:
+      - "(?i)ignore (all )?(previous|prior) instructions"
+      - "(?i)you are now|disregard (the )?above|new instructions"
+      - "(?i)as an? (ai|assistant|agent|model)[,:]?\\s*(you|please)"
+      - "(?i)(curl|wget|nc|bash -c)\\s+[^\n]*(https?://|base64|/dev/tcp)"
+      - "(?i)eval\\s*\\(|exec\\s*\\(|__import__|subprocess\\."
+      - "(?i)<!--\\s*(ignore|note to (ai|agent|model|maintainer))"
+      - "(?i)data:(text|application)/[^;]*;base64,[A-Za-z0-9+/=]{40,}"
+  l3_war_games:
+    cadence: "weekly"
+    shadow_clone: true
+    canary_tracking: true

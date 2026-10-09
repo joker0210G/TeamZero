@@ -1,0 +1,105 @@
+{
+  "task_id": "DEMO-TASK-REFUND-001",
+  "commit_sha": "a1b2c3d4e5f6",
+  "verdict": "NEEDS_REPAIR",
+  "summary": {
+    "total_findings": 11,
+    "critical": 7,
+    "high": 0,
+    "medium": 2,
+    "low": 2
+  },
+  "receipt": "TZ-da92ea38924b2794ee501efb",
+  "issued_at": 1791565095.0219443,
+  "token_usage": 0,
+  "findings": [
+    {
+      "fid": "DET-ASSERT-ZERO-test_r3_dummy",
+      "phase": "Phase A (Deterministic)",
+      "severity": "medium",
+      "title": "Test 'test_r3_dummy' has zero assertions",
+      "evidence": "Test execution registers 0 assertions. Risk: always-green dummy test.",
+      "repro": ""
+    },
+    {
+      "fid": "DET-ASSERT-TRIVIAL-test_r3_dummy",
+      "phase": "Phase A (Deterministic)",
+      "severity": "low",
+      "title": "Test 'test_r3_dummy' contains trivial assertions",
+      "evidence": "Matched pattern: ^\\s*pass\\s*$",
+      "repro": ""
+    },
+    {
+      "fid": "DET-RISK-SURFACE",
+      "phase": "Phase A (Deterministic)",
+      "severity": "low",
+      "title": "Diff touches high-risk surface area",
+      "evidence": "Tokens identified in diff: ['refund']",
+      "repro": ""
+    },
+    {
+      "fid": "SPEC-DIVERGENCE-R1-day30",
+      "phase": "Phase B (Probes)",
+      "severity": "critical",
+      "title": "Spec Divergence: Day 30 unopened received 0.0, expected full 50.0",
+      "evidence": "Rule R1 specifies full refund within 30 days. Failed on boundary day 30.",
+      "repro": "{\"args\": {\"amount_paid\": 50.0, \"days_since_purchase\": 30, \"item_condition\": \"unopened\"}, \"expected\": 50.0, \"got\": 0.0}"
+    },
+    {
+      "fid": "SPEC-DIVERGENCE-R1-day30",
+      "phase": "Phase B (Probes)",
+      "severity": "critical",
+      "title": "Spec Divergence: Day 30 unopened received 0.0, expected full 50.0",
+      "evidence": "Rule R1 specifies full refund within 30 days. Failed on boundary day 30.",
+      "repro": "{\"args\": {\"amount_paid\": 50.0, \"days_since_purchase\": 30, \"item_condition\": \"unopened\"}, \"expected\": 50.0, \"got\": 0.0}"
+    },
+    {
+      "fid": "INV-NEGATIVE-REFUND-PROBE-SWEEP-amt-10.0-d-5-unopened",
+      "phase": "Phase B (Probes)",
+      "severity": "critical",
+      "title": "Invariant Violation: Unguarded negative input returns negative refund",
+      "evidence": "amount_paid=-10.0 resulted in refund=-10.0. Unsanitized reverse-charge risk!",
+      "repro": "{\"args\": {\"amount_paid\": -10.0, \"days_since_purchase\": -5, \"item_condition\": \"unopened\"}, \"returned\": {\"refund\": -10.0, \"rule_id\": \"R1\"}}"
+    },
+    {
+      "fid": "INV-NEGATIVE-REFUND-PROBE-SWEEP-amt-10.0-d-5-opened",
+      "phase": "Phase B (Probes)",
+      "severity": "critical",
+      "title": "Invariant Violation: Unguarded negative input returns negative refund",
+      "evidence": "amount_paid=-10.0 resulted in refund=-8.0. Unsanitized reverse-charge risk!",
+      "repro": "{\"args\": {\"amount_paid\": -10.0, \"days_since_purchase\": -5, \"item_condition\": \"opened\"}, \"returned\": {\"refund\": -8.0, \"rule_id\": \"R2\"}}"
+    },
+    {
+      "fid": "INV-NEGATIVE-REFUND-PROBE-SWEEP-amt-10.0-d0-unopened",
+      "phase": "Phase B (Probes)",
+      "severity": "critical",
+      "title": "Invariant Violation: Unguarded negative input returns negative refund",
+      "evidence": "amount_paid=-10.0 resulted in refund=-10.0. Unsanitized reverse-charge risk!",
+      "repro": "{\"args\": {\"amount_paid\": -10.0, \"days_since_purchase\": 0, \"item_condition\": \"unopened\"}, \"returned\": {\"refund\": -10.0, \"rule_id\": \"R1\"}}"
+    },
+    {
+      "fid": "INV-NEGATIVE-REFUND-PROBE-SWEEP-amt-10.0-d0-opened",
+      "phase": "Phase B (Probes)",
+      "severity": "critical",
+      "title": "Invariant Violation: Unguarded negative input returns negative refund",
+      "evidence": "amount_paid=-10.0 resulted in refund=-8.0. Unsanitized reverse-charge risk!",
+      "repro": "{\"args\": {\"amount_paid\": -10.0, \"days_since_purchase\": 0, \"item_condition\": \"opened\"}, \"returned\": {\"refund\": -8.0, \"rule_id\": \"R2\"}}"
+    },
+    {
+      "fid": "SPEC-DIVERGENCE-R1-day30",
+      "phase": "Phase B (Probes)",
+      "severity": "critical",
+      "title": "Spec Divergence: Day 30 unopened received 0.0, expected full 100.0",
+      "evidence": "Rule R1 specifies full refund within 30 days. Failed on boundary day 30.",
+      "repro": "{\"args\": {\"amount_paid\": 100.0, \"days_since_purchase\": 30, \"item_condition\": \"unopened\"}, \"expected\": 100.0, \"got\": 0.0}"
+    },
+    {
+      "fid": "MUT-SURVIVOR-aa4420d4",
+      "phase": "Phase C (Mutations)",
+      "severity": "medium",
+      "title": "Semantic Mutant Survived Probing",
+      "evidence": "Mutant '<' -> '<=' survived all test probes. (Exposes potential test assertion blind spot)",
+      "repro": ""
+    }
+  ]
+}
