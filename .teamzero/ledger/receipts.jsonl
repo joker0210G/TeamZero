@@ -19,3 +19,14 @@
 {"receipt": "TZ-202060913bfc00d48a287390", "subject": "founder_approval:aabbccddeeff11223344556677889900aabbccdd", "kind": "founder_approval", "issued_at": 1791568311.3650563}
 {"receipt": "TZ-f67c85a2c1cfaab7ae1a2aae", "subject": "merge_gate:aabbccddeeff11223344556677889900aabbccdd", "kind": "merge_attestation", "issued_at": 1791568311.4570081}
 {"receipt": "TZ-4d262f6bfa86ac435bb7329c", "subject": "gauntlet_run:00000000", "kind": "gauntlet_run", "issued_at": 1791568311.760647}
+{"receipt": "TZ-8065df7c63090e20bdc6d9c6", "subject": "test_subject", "kind": "test_kind", "issued_at": 1791568458.2694395}
+{"receipt": "TZ-2bbc68e38d7a304ab2c56f67", "subject": "gauntlet_run:1111222233334444555566667777888899990000", "kind": "gauntlet_run", "issued_at": 1791568458.270998}
+{"receipt": "TZ-5c940cfc36003a129af408b7", "subject": "gauntlet_run:test_sha_incomplete_99999999", "kind": "gauntlet_run", "issued_at": 1791568458.2731187}
+{"receipt": "TZ-1424382a8533fedee3d95dca", "subject": "gauntlet_run:aabbccddeeff11223344556677889900aabbccdd", "kind": "gauntlet_run", "issued_at": 1791568458.3312054}
+{"receipt": "TZ-7221b9a623d1f3de85a17532", "subject": "TASK-TEST:aabbccddeeff11223344556677889900aabbccdd", "kind": "breaker_run", "issued_at": 1791568458.3313923}
+{"receipt": "TZ-e0507cb92280e1f2279a4e0c", "subject": "founder_approval:aabbccddeeff11223344556677889900aabbccdd", "kind": "founder_approval", "issued_at": 1791568458.3315282}
+{"receipt": "TZ-d9ae68ed7b73460053a7d50c", "subject": "merge_gate:aabbccddeeff11223344556677889900aabbccdd", "kind": "merge_attestation", "issued_at": 1791568458.3750005}
+{"receipt": "TZ-30f88bb852ab7efc5f214746", "subject": "gauntlet_run:e4e4e5674185b7b213373287924e189754b060ea", "kind": "gauntlet_run", "issued_at": 1791568458.5679839}
+{"receipt": "TZ-627ac85f5212006834d34660", "subject": "TASK-LIVE-e4e4e567:e4e4e5674185", "kind": "breaker_run", "issued_at": 1791568481.1510901}
+{"receipt": "TZ-d2793541d8333a0a3dcb1d6d", "subject": "founder_approval:e4e4e5674185b7b213373287924e189754b060ea", "kind": "founder_approval", "issued_at": 1791568551.952197}
+{"receipt": "TZ-96e1ad1b553411abaf342819", "subject": "merge_gate:e4e4e5674185b7b213373287924e189754b060ea", "kind": "merge_attestation", "issued_at": 1791568562.646241}

@@ -170,6 +170,7 @@ def main():
     
     inbox_p = subparsers.add_parser("inbox", help="Open Asks Inbox triage terminal")
     inbox_p.add_argument("--summary", action="store_true", help="Print summary without prompt")
+    inbox_p.add_argument("--approve", type=str, help="Approve and sign a specific ask ID")
 
     subparsers.add_parser("gauntlet", help="Run deterministic test gauntlet")
     
@@ -193,6 +194,16 @@ def main():
     elif args.subcommand == "inbox":
         if args.summary:
             print_summary()
+        elif args.approve:
+            from teamzero.inbox_triage import resolve_ask
+            from teamzero.config import ASKS_DIR
+            target = ASKS_DIR / f"{args.approve}.json"
+            if not target.exists():
+                target = ASKS_DIR / args.approve
+            if target.exists():
+                resolve_ask(target, "APPROVE")
+            else:
+                print(f"Ask '{args.approve}' not found in {ASKS_DIR}")
         else:
             interactive_triage()
     elif args.subcommand == "gauntlet":

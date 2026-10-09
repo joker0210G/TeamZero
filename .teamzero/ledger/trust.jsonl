@@ -5,3 +5,5 @@
 {"agent_id": "redteam:breaker", "trust_score": 100, "autonomy_level": 5, "updated_at": "2026-10-09T00:00:00Z", "reason": "Internal red team sentinel"}
 {"agent_id": "engineer:demo-agent", "trust_score": 95, "autonomy_level": 3, "updated_at": "2026-10-09T16:58:15Z", "reason": "[-5] Breaker caught defects on a1b2c3d4"}
 {"agent_id": "engineer:claude-3-5-sonnet", "trust_score": 100, "autonomy_level": 3, "updated_at": "2026-10-09T17:41:36Z", "reason": "[+2] Breaker PASS on 11223344"}
+{"agent_id": "git:author", "trust_score": 100, "autonomy_level": 3, "updated_at": "2026-10-09T17:54:41Z", "reason": "[+2] Breaker PASS on e4e4e567"}
+{"agent_id": "founder:bootstrap", "trust_score": 100, "autonomy_level": 3, "updated_at": "2026-10-09T17:55:51Z", "reason": "[+3] Founder approved candidate e4e4e567"}
