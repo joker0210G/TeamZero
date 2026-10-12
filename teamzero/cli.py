@@ -1099,18 +1099,25 @@ def main(argv=None):
             print("=" * 65)
             print(" Chain-of-Verification (CoVe) Audit Report")
             print("=" * 65)
-            print(f" Initial Baseline Claim:")
-            print(f"   {res.initial_baseline[:200]}")
-            print(f"\n Verification Fact-Check Questions ({len(res.verification_questions)}):")
-            for q in res.verification_questions:
-                print(f"   ? [{q.question_id}] {q.question}")
-                print(f"     Answer: {q.answer} (Verdict: {q.verdict})")
-            print(f"\n Contradictions Detected: {len(res.contradictions)}")
-            for c in res.contradictions:
-                print(f"   ! {c}")
+            print(f" Status:              {res['status']}")
+            print(f" Verification Result: {'[PASS]' if res['is_verified'] else '[FAIL]'}")
+            print(f" Total Checks:        {res['total_checks']} (Passed: {res['passed_checks']})")
+            if res.get("corrections_applied"):
+                print(f"\n Corrections Applied ({len(res['corrections_applied'])}):")
+                for c in res["corrections_applied"]:
+                    print(f"   * {c}")
+            print("\n Verification Plan & Evidence:")
+            for a in res.get("verification_answers", []):
+                sym = "[PASS]" if a.get("verified") else "[FAIL]"
+                print(f"   {sym} [{a.get('category')}] {a.get('ground_truth_finding')}")
+                if not a.get("verified") and a.get("correction_needed"):
+                    print(f"          Action: {a.get('correction_needed')}")
             print("-" * 65)
-            print(f" Rectified Final Output:")
-            print(f"   {res.rectified_output}")
+            if res.get("corrections_applied"):
+                print(" Rectified Code:")
+                print(res.get("revised_code"))
+            else:
+                print(" Code Verified Clean. Zero hallucinations or violations detected.")
             print("=" * 65)
         elif args.mode == "plan":
             plan = generate_verification_plan(claim_or_code)
@@ -1118,7 +1125,8 @@ def main(argv=None):
             print(f" Chain-of-Verification Plan ({len(plan)} Questions)")
             print("=" * 65)
             for q in plan:
-                print(f" [{q.question_id}] {q.question} (Target: {q.target_fact})")
+                print(f" [{q.category}] {q.question}")
+                print(f"    Target: {q.target_subject}")
             print("=" * 65)
         elif args.mode == "consensus":
             candidates = args.candidates if args.candidates else [claim_or_code]
@@ -1126,10 +1134,16 @@ def main(argv=None):
             print("=" * 65)
             print(f" Self-Consistency Consensus Analysis ({len(candidates)} Candidates)")
             print("=" * 65)
-            print(f" Consensus Answer:    {cons.consensus_answer}")
-            print(f" Agreement Ratio:    {cons.agreement_ratio * 100:.1f}%")
-            print(f" Unique Clusters:    {cons.unique_clusters}")
-            print(f" Candidate Pool:     {cons.candidates}")
+            if "error" in cons:
+                print(f" [!] Error: {cons['error']}")
+            else:
+                print(f" Consensus Status:    {cons['status']}")
+                print(f" Consensus Score:     {cons['consensus_score'] * 100:.1f}%")
+                print(f" Winning Candidate:   Candidate #{cons['winning_candidate_index']}")
+                print(f" Shared Symbols:      {', '.join(cons.get('shared_symbols', []))}")
+                print("-" * 65)
+                print(" Selected Consensus Implementation:")
+                print(cons.get("selected_code"))
             print("=" * 65)
     else:
         parser.print_help()
