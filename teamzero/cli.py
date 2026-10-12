@@ -357,6 +357,13 @@ def main(argv=None):
     ideate_p.add_argument("--title", type=str, help="Title for the ideation brief")
     ideate_p.add_argument("--author", type=str, default="Founder", help="Author of the ideation brief (default: Founder)")
 
+    task_p = subparsers.add_parser("task", help="Decompose PRDs, navigate dependency trees, and track microtask execution")
+    task_p.add_argument("action", nargs="?", default="list", choices=["list", "next", "parse", "expand", "update", "validate", "fix"], help="Task action to perform")
+    task_p.add_argument("--file", type=str, help="PRD or Ask markdown file to parse into microtasks")
+    task_p.add_argument("--id", type=str, help="Task ID to expand or update")
+    task_p.add_argument("--status", type=str, help="New status for task (TODO, IN_PROGRESS, GAUNTLET_PASS, VERIFIED)")
+    task_p.add_argument("--subtasks", type=str, help="Comma-separated list of subtask titles to expand into")
+
     args = parser.parse_args()
 
     if args.subcommand == "init":
@@ -695,6 +702,7 @@ def main(argv=None):
 
             print("\n -- Stage 2: DEFINE (Problem Statement & Invariants) --")
             pov = input(" [?] POV Statement ([User] needs [Action] because [Insight]): ").strip()
+            hmw = input(" [?] How Might We (HMW) Prompt (e.g. How might we make checkout 1-tap?): ").strip()
             print(" [i] Enter non-negotiable business invariants (one per line, blank line to finish):")
             invariants = []
             while True:
@@ -703,7 +711,17 @@ def main(argv=None):
                     break
                 invariants.append(inv)
 
-            print("\n -- Stage 3: IDEATE (Divergent Hypotheses to Race) --")
+            print("\n -- Stage 3: IDEATE (Divergent Brainstorming & Negative Inversion) --")
+            tech = input(" [?] Ideation Technique (Brainstorming / SCAMPER / Crazy 8s / Reverse Brainstorming) [Brainstorming]: ").strip() or "Brainstorming"
+            print(" [i] Negative / Reverse Brainstorming (How could this fail or frustrate users?):")
+            neg_fails = []
+            while True:
+                f_mode = input("     Failure mode (blank to finish) > ").strip()
+                if not f_mode:
+                    break
+                inv_sol = input("     -> Inverted solution > ").strip()
+                neg_fails.append({"failure": f_mode, "inversion": inv_sol})
+
             print(" [i] Enter competing implementation hypotheses (blank line to finish):")
             hypotheses = []
             hypo_idx = 1
@@ -714,7 +732,9 @@ def main(argv=None):
                 hypotheses.append({"name": chr(64 + hypo_idx), "desc": h})
                 hypo_idx += 1
 
-            print("\n -- Stage 4: PROTOTYPE (Minimal Target Surface) --")
+            print("\n -- Stage 4: PROTOTYPE & PRIORITIZATION (MoSCoW & Minimal Surface) --")
+            must_input = input(" [?] MoSCoW Must-Haves (comma-separated): ").strip()
+            impact_effort = input(" [?] Impact vs Effort (Quick Win / Strategic Build / Fill-in) [Quick Win]: ").strip() or "Quick Win"
             mod = input(" [?] Target Module (e.g. teamzero.checkout): ").strip()
             fn = input(" [?] Target Function Signature (e.g. run_checkout): ").strip()
 
@@ -740,10 +760,20 @@ def main(argv=None):
                 ),
                 define=DefinePhase(
                     pov_statement=pov,
+                    hmw_prompt=hmw,
                     invariants=invariants,
                 ),
-                ideate=IdeatePhase(hypotheses=hypotheses),
-                prototype=PrototypePhase(target_module=mod, target_function=fn),
+                ideate=IdeatePhase(
+                    technique=tech,
+                    negative_failure_modes=neg_fails,
+                    hypotheses=hypotheses
+                ),
+                prototype=PrototypePhase(
+                    moscow_must=[x.strip() for x in must_input.split(",") if x.strip()] if must_input else [],
+                    impact_effort=impact_effort,
+                    target_module=mod,
+                    target_function=fn
+                ),
                 test_rules=rules,
             )
 
@@ -755,6 +785,108 @@ def main(argv=None):
             print(f"   Compiled Spec: {out_spec}")
             print(f"   Next Step: Run 'python -m teamzero.cli race --spec {out_spec}'")
             print("=" * 65)
+    elif args.subcommand == "task":
+        from teamzero.tasks import TaskRegistry
+        reg = TaskRegistry()
+
+        if args.action == "parse":
+            if not args.file:
+                print("[!] Error: Specify --file <prd_or_ask.md> to parse.")
+                sys.exit(1)
+            src = Path(args.file)
+            if not src.exists():
+                print(f"[!] Error: File '{src}' not found.")
+                sys.exit(1)
+            content = src.read_text(encoding="utf-8")
+            prefix = src.stem.replace("ASK_", "").replace("ASK-", "").upper()[:8] or "TASK"
+            tasks = reg.decompose_prd(content, feature_prefix=prefix)
+            print("=" * 65)
+            print(f" TeamZero PRD Decomposition Engine")
+            print("=" * 65)
+            print(f" [OK] Decomposed {src.name} into {len(tasks)} dependency-chained microtasks:")
+            for t in tasks:
+                dep_str = f"<- {', '.join(t.dependencies)}" if t.dependencies else "[ROOT]"
+                print(f"   * [{t.id}] (Complexity {t.complexity}/10) {t.title:<35} {dep_str}")
+            print(f"\n Tasks saved to .teamzero/tasks.json. Run 'tz task next' to start.")
+            print("=" * 65)
+        elif args.action == "next":
+            nxt = reg.get_next_task()
+            print("=" * 65)
+            print(" TeamZero Active Task Navigator")
+            print("=" * 65)
+            if not nxt:
+                print(" [i] No ready tasks found. Either all tasks are complete, or remaining tasks are blocked.")
+            else:
+                dep_str = ', '.join(nxt.dependencies) if nxt.dependencies else "None (Ready)"
+                print(f" [NEXT READY TASK] ID: {nxt.id}")
+                print(f" Title:        {nxt.title}")
+                print(f" Complexity:   {nxt.complexity}/10")
+                print(f" Dependencies: {dep_str}")
+                print(f" Description:  {nxt.description}")
+                if nxt.acceptance_criteria:
+                    print(f" Acceptance Criteria:")
+                    for ac in nxt.acceptance_criteria:
+                        print(f"   - {ac}")
+            print("=" * 65)
+        elif args.action == "expand":
+            if not args.id or not args.subtasks:
+                print("[!] Error: Specify --id <task_id> and --subtasks 'Subtask 1, Subtask 2'")
+                sys.exit(1)
+            sub_titles = [s.strip() for s in args.subtasks.split(",") if s.strip()]
+            subs = reg.expand_task(args.id, sub_titles)
+            print("=" * 65)
+            print(f" [OK] Expanded {args.id} into {len(subs)} subtasks:")
+            for s in subs:
+                print(f"   + [{s.id}] {s.title} (Complexity {s.complexity}/10)")
+            print("=" * 65)
+        elif args.action == "update":
+            if not args.id or not args.status:
+                print("[!] Error: Specify --id <task_id> and --status <STATUS>")
+                sys.exit(1)
+            updated = reg.update_status(args.id, args.status)
+            if updated:
+                print(f"[OK] Task {updated.id} status updated to {updated.status}")
+            else:
+                print(f"[!] Task {args.id} not found.")
+        elif args.action == "validate":
+            val = reg.validate_dependencies()
+            print("=" * 65)
+            print(" TeamZero Dependency DAG Validation")
+            print("=" * 65)
+            if val["valid"]:
+                print(f" [OK] All {val['total_tasks']} tasks have valid dependencies with zero cycles.")
+            else:
+                if val.get("missing_dependencies"):
+                    print(" [!] Missing Dependencies:")
+                    for tid, missing in val["missing_dependencies"].items():
+                        print(f"     Task {tid} references missing: {', '.join(missing)}")
+                if val.get("circular_dependencies"):
+                    print(" [!] Circular Loops:")
+                    for cycle in val["circular_dependencies"]:
+                        print(f"     Cycle: {cycle}")
+            print("=" * 65)
+        elif args.action == "fix":
+            fix_res = reg.fix_dependencies()
+            print("=" * 65)
+            print(" TeamZero Dependency Auto-Fix")
+            print("=" * 65)
+            print(f" Fixed {fix_res['fixed_count']} dangling dependencies.")
+            print(f" Status: {fix_res['status']}")
+            print("=" * 65)
+        else:  # list
+            tasks = reg.load_tasks()
+            print("=" * 70)
+            print(" TeamZero Microtask Registry (DAG)")
+            print("=" * 70)
+            if not tasks:
+                print(" [i] Registry is empty. Run 'tz task parse --file <prd.md>' to ingest tasks.")
+            else:
+                print(f" {'ID':<10} | {'STATUS':<12} | {'CMPLX':<5} | {'TITLE':<32}")
+                print(" " + "-" * 66)
+                for t in tasks:
+                    badge = f"[{t.status}]"
+                    print(f" {t.id:<10} | {badge:<12} | {t.complexity:<5} | {t.title[:32]}")
+            print("=" * 70)
     else:
         parser.print_help()
 

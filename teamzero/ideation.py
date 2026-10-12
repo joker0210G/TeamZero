@@ -31,18 +31,27 @@ class EmpathizePhase:
 @dataclass
 class DefinePhase:
     pov_statement: str = ""
+    five_whys: List[str] = field(default_factory=list)
+    hmw_prompt: str = ""
     invariants: List[str] = field(default_factory=list)
     acceptance_criteria: List[str] = field(default_factory=list)
 
 
 @dataclass
 class IdeatePhase:
+    technique: str = "Brainstorming"  # Brainstorming, SCAMPER, Crazy 8s, Reverse Brainstorming
+    negative_failure_modes: List[Dict[str, str]] = field(default_factory=list)  # {"failure": "...", "inversion": "..."}
     hypotheses: List[Dict[str, str]] = field(default_factory=list)
     pitfalls_to_watch: List[str] = field(default_factory=list)
 
 
 @dataclass
 class PrototypePhase:
+    moscow_must: List[str] = field(default_factory=list)
+    moscow_should: List[str] = field(default_factory=list)
+    moscow_could: List[str] = field(default_factory=list)
+    moscow_wont: List[str] = field(default_factory=list)
+    impact_effort: str = "Quick Win (High Impact / Low Effort)"
     target_module: str = ""
     target_function: str = ""
     scope_boundary: str = ""
@@ -67,10 +76,25 @@ class DesignThinkingBrief:
     test_rules: List[IdeationTestRule] = field(default_factory=list)
 
     def to_markdown(self) -> str:
+        whys_lines = "\n".join(f"  - Why {idx}: {w}" for idx, w in enumerate(self.define.five_whys, 1)) if self.define.five_whys else ""
+        whys_block = f"- Root Cause Analysis (The 5 Whys):\n{whys_lines}\n" if whys_lines else ""
+        hmw_line = f"- How Might We (HMW) Prompt: {self.define.hmw_prompt}\n" if self.define.hmw_prompt else ""
+
         inv_lines = "\n".join(f"  - {inv}" for inv in self.define.invariants) if self.define.invariants else "  - None specified"
         ac_lines = "\n".join(f"  - {ac}" for ac in self.define.acceptance_criteria) if self.define.acceptance_criteria else "  - None specified"
+
+        fail_lines = "\n".join(f"  - Failure: {f.get('failure','')} -> Inversion: {f.get('inversion','')}" for f in self.ideate.negative_failure_modes) if self.ideate.negative_failure_modes else ""
+        fail_block = f"- Negative / Reverse Brainstorming (Failure Inversions):\n{fail_lines}\n" if fail_lines else ""
+
         hypo_lines = "\n".join(f"  - Option {h.get('name', 'N/A')}: {h.get('desc', '')}" for h in self.ideate.hypotheses) if self.ideate.hypotheses else "  - None specified"
         pitfall_lines = "\n".join(f"  - {p}" for p in self.ideate.pitfalls_to_watch) if self.ideate.pitfalls_to_watch else "  - None specified"
+
+        moscow_block = f"""- Prioritization (MoSCoW Matrix):
+  - Must Have (M): {', '.join(self.prototype.moscow_must) or 'Core functionality'}
+  - Should Have (S): {', '.join(self.prototype.moscow_should) or 'Secondary improvements'}
+  - Could Have (C): {', '.join(self.prototype.moscow_could) or 'Nice-to-have optimizations'}
+  - Won't Have (W): {', '.join(self.prototype.moscow_wont) or 'Deferred'}
+- Impact vs. Effort: {self.prototype.impact_effort}"""
 
         table_rows = []
         for r in self.test_rules:
@@ -90,18 +114,20 @@ class DesignThinkingBrief:
 
 ## 2. Stage 2: Define (Frame the Problem & Boundaries)
 - Point of View (POV) Statement: {self.define.pov_statement}
-- Core Invariants (Non-Negotiable Business Truths):
+{whys_block}{hmw_line}- Core Invariants (Non-Negotiable Business Truths):
 {inv_lines}
 - Acceptance Criteria:
 {ac_lines}
 
-## 3. Stage 3: Ideate (Divergent Brainstorming)
-- Proposed Hypotheses:
+## 3. Stage 3: Ideate (Divergent Brainstorming & Negative Inversion)
+- Ideation Technique: {self.ideate.technique}
+{fail_block}- Proposed Hypotheses:
 {hypo_lines}
 - Potential Pitfalls & Traps to Watch:
 {pitfall_lines}
 
-## 4. Stage 4: Prototype (Minimum Viable Surface)
+## 4. Stage 4: Prototype & Prioritization (MoSCoW & Minimal Surface)
+{moscow_block}
 - Target Module / Service: {self.prototype.target_module}
 - Target Function Signature: {self.prototype.target_function}
 - Scope Boundary: {self.prototype.scope_boundary}
@@ -133,11 +159,19 @@ class DesignThinkingBrief:
             "invariants": self.define.invariants,
             "hypotheses": [h.get("name", "") for h in self.ideate.hypotheses],
             "decision_table": decision_table,
+            "prioritization": {
+                "technique": self.ideate.technique,
+                "impact_effort": self.prototype.impact_effort,
+                "moscow_must": self.prototype.moscow_must,
+                "failure_inversions": self.ideate.negative_failure_modes
+            },
             "metadata": {
                 "author": self.author,
                 "created_at": self.created_at,
                 "persona": self.empathize.target_persona,
-                "pov": self.define.pov_statement
+                "pov": self.define.pov_statement,
+                "hmw": self.define.hmw_prompt,
+                "five_whys": self.define.five_whys
             }
         }
 
@@ -165,6 +199,16 @@ def parse_ideation_markdown(content: str) -> DesignThinkingBrief:
 
     # Define
     pov_m = re.search(r"- Point of View \(POV\) Statement:\s*(.+)", content)
+    hmw_m = re.search(r"- How Might We \(HMW\) Prompt:\s*(.+)", content)
+
+    five_whys = []
+    whys_section = re.search(r"- Root Cause Analysis \(The 5 Whys\):.*?(?:\n- How Might We|\n- Core Invariants|\n## )", content, re.DOTALL)
+    if whys_section:
+        for line in whys_section.group(0).splitlines():
+            line = line.strip()
+            if re.match(r"^-\s*Why\s*\d+:", line):
+                five_whys.append(re.sub(r"^-\s*Why\s*\d+:\s*", "", line))
+
     invariants = []
     inv_section = re.search(r"- Core Invariants.*?:(.*?)(?:- Acceptance Criteria|\n## )", content, re.DOTALL)
     if inv_section:
@@ -183,11 +227,27 @@ def parse_ideation_markdown(content: str) -> DesignThinkingBrief:
 
     define = DefinePhase(
         pov_statement=pov_m.group(1).strip() if pov_m else "",
+        five_whys=five_whys,
+        hmw_prompt=hmw_m.group(1).strip() if hmw_m else "",
         invariants=invariants,
         acceptance_criteria=ac,
     )
 
     # Ideate
+    tech_m = re.search(r"- Ideation Technique:\s*(.+)", content)
+    technique = tech_m.group(1).strip() if tech_m else "Brainstorming"
+
+    negative_failure_modes = []
+    fail_section = re.search(r"- Negative / Reverse Brainstorming.*?:(.*?)(?:- Proposed Hypotheses|\n## )", content, re.DOTALL)
+    if fail_section:
+        for line in fail_section.group(1).splitlines():
+            line = line.strip()
+            if "->" in line:
+                parts = line.lstrip("- ").split("->", 1)
+                fail_text = parts[0].replace("Failure:", "").replace("Failure Mode", "").strip()
+                inv_text = parts[1].replace("Inversion:", "").replace("Inverted Solution:", "").strip()
+                negative_failure_modes.append({"failure": fail_text, "inversion": inv_text})
+
     hypotheses = []
     hypo_section = re.search(r"- Proposed Hypotheses.*?:(.*?)(?:- Potential Pitfalls|\n## )", content, re.DOTALL)
     if hypo_section:
@@ -207,14 +267,30 @@ def parse_ideation_markdown(content: str) -> DesignThinkingBrief:
             if line.startswith("- "):
                 pitfalls.append(line[2:].strip())
 
-    ideate = IdeatePhase(hypotheses=hypotheses, pitfalls_to_watch=pitfalls)
+    ideate = IdeatePhase(
+        technique=technique,
+        negative_failure_modes=negative_failure_modes,
+        hypotheses=hypotheses,
+        pitfalls_to_watch=pitfalls
+    )
 
     # Prototype
+    must_m = re.search(r"- Must Have \(M\):\s*(.+)", content)
+    should_m = re.search(r"- Should Have \(S\):\s*(.+)", content)
+    could_m = re.search(r"- Could Have \(C\):\s*(.+)", content)
+    wont_m = re.search(r"- Won't Have \(W\):\s*(.+)", content)
+    impact_m = re.search(r"- Impact vs\. Effort:\s*(.+)", content)
+
     mod_m = re.search(r"- Target Module / Service:\s*(.+)", content)
     fn_m = re.search(r"- Target Function Signature:\s*(.+)", content)
     scope_m = re.search(r"- Scope Boundary:\s*(.+)", content)
 
     prototype = PrototypePhase(
+        moscow_must=[x.strip() for x in must_m.group(1).split(",") if x.strip()] if must_m else [],
+        moscow_should=[x.strip() for x in should_m.group(1).split(",") if x.strip()] if should_m else [],
+        moscow_could=[x.strip() for x in could_m.group(1).split(",") if x.strip()] if could_m else [],
+        moscow_wont=[x.strip() for x in wont_m.group(1).split(",") if x.strip()] if wont_m else [],
+        impact_effort=impact_m.group(1).strip() if impact_m else "Quick Win (High Impact / Low Effort)",
         target_module=mod_m.group(1).strip() if mod_m else "",
         target_function=fn_m.group(1).strip() if fn_m else "",
         scope_boundary=scope_m.group(1).strip() if scope_m else "",

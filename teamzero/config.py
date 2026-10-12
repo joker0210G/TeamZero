@@ -55,6 +55,7 @@ TRUST_LEDGER = LEDGER_DIR / "trust.jsonl"
 PAYROLL_LEDGER = LEDGER_DIR / "payroll.jsonl"
 RECEIPTS_LEDGER = LEDGER_DIR / "receipts.jsonl"
 CONSTITUTION_FILE = ORG_DIR / "constitution.yaml"
+TASKS_REGISTRY_FILE = ORG_DIR / "tasks.json"
 
 MINTKEY_FILE = ORG_DIR / ".mintkey"
 

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "teamzero": {
+      "command": "python",
+      "args": [
+        "-m",
+        "teamzero.mcp_server"
+      ],
+      "env": {
+        "TZ_ROOT": "D:\\Workspace\\TeamZero",
+        "PYTHONIOENCODING": "utf-8",
+        "TEAMZERO_TOOLS": "all"
+      }
+    }
+  }
+}

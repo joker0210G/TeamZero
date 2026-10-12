@@ -206,7 +206,11 @@ MCP_SERVER_BLOCK = {
         "teamzero": {
             "command": None,   # filled at init time
             "args": ["-m", "teamzero.mcp_server"],
-            "env": {"TZ_ROOT": None},   # filled at init time
+            "env": {
+                "TZ_ROOT": None,
+                "PYTHONIOENCODING": "utf-8",
+                "TEAMZERO_TOOLS": "all"
+            },
         }
     }
 }
@@ -316,9 +320,21 @@ def write_mcp_configs(root: Path, mcp_command: str, tz_root: str) -> list[str]:
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         actions.append(f"wrote {path}")
 
+    # Standard config definitions across editors:
+    # 1. Claude Code / Desktop & standard MCP clients
     merge_into(root / "claude_mcp.json", None)
     merge_into(root / ".mcp.json", None)
+
+    # 2. Cursor IDE
     merge_into(root / ".cursor" / "mcp.json", None)
+
+    # 3. VS Code (Cline / Roo-Code / Copilot MCP extensions)
+    merge_into(root / ".vscode" / "mcp.json", None)
+
+    # 4. OpenCode / Open-source agent runners
+    merge_into(root / "opencode_mcp.json", None)
+
+    # 5. Google Antigravity
     merge_into(root / "antigravity_mcp.json", None)
     return actions
 

@@ -2,7 +2,7 @@
 
 __version__ = "0.1.0-alpha.3"
 
-from teamzero.init_project import init_project
+from teamzero.init_project import init_project as bootstrap_project, init_project
 
 from teamzero.governance import (
     sign_receipt,

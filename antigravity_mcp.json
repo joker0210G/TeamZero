@@ -1,9 +1,25 @@
 {
   "name": "teamzero",
   "command": "python",
-  "args": ["d:/Workspace/TeamZero/mcp_server.py"],
+  "args": [
+    "d:/Workspace/TeamZero/mcp_server.py"
+  ],
   "env": {
     "TZ_SERVER_SECRET": "teamzero-sovereign-master-key-2026",
     "PYTHONIOENCODING": "utf-8"
+  },
+  "mcpServers": {
+    "teamzero": {
+      "command": "python",
+      "args": [
+        "-m",
+        "teamzero.mcp_server"
+      ],
+      "env": {
+        "TZ_ROOT": "D:\\Workspace\\TeamZero",
+        "PYTHONIOENCODING": "utf-8",
+        "TEAMZERO_TOOLS": "all"
+      }
+    }
   }
 }

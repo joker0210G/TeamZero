@@ -42,6 +42,63 @@ from teamzero.governance import (
 
 mcp = FastMCP("teamzero")
 
+# ── Configurable Tool Loading (TEAMZERO_TOOLS) ──────────────────────────────
+CORE_TOOLS = {
+    "teamzero_get_tasks",
+    "teamzero_get_next_task",
+    "teamzero_get_task",
+    "teamzero_update_task_status",
+    "teamzero_get_spec",
+    "teamzero_run_gauntlet",
+    "teamzero_report_health",
+}
+
+STANDARD_TOOLS = CORE_TOOLS | {
+    "teamzero_submit_candidate",
+    "teamzero_query_memory",
+    "teamzero_add_task",
+    "teamzero_expand_task",
+    "teamzero_remove_task",
+    "teamzero_analyze_complexity",
+    "teamzero_validate_dependencies",
+    "teamzero_ideate_spec",
+    "teamzero_check_merge",
+    "teamzero_ask_founder",
+    "teamzero_parse_prd",
+}
+
+def _normalize_tool_name(name: str) -> str:
+    cleaned = name.strip().lower().replace("-", "_")
+    if not cleaned.startswith("teamzero_"):
+        cleaned = f"teamzero_{cleaned}"
+    return cleaned
+
+def _should_register_tool(tool_name: str) -> bool:
+    env_mode = os.environ.get("TEAMZERO_TOOLS", "all").strip().lower()
+    if env_mode in ("all", "*", ""):
+        return True
+    if env_mode in ("core", "lean"):
+        return tool_name in CORE_TOOLS
+    if env_mode == "standard":
+        return tool_name in STANDARD_TOOLS
+    allowed = {_normalize_tool_name(item) for item in env_mode.split(",") if item.strip()}
+    return tool_name in allowed
+
+_orig_tool = mcp.tool
+
+def _configurable_tool(*args, **kwargs):
+    def decorator(fn):
+        if _should_register_tool(fn.__name__):
+            return _orig_tool(*args, **kwargs)(fn)
+        return fn
+    if len(args) == 1 and callable(args[0]):
+        fn = args[0]
+        args = ()
+        return decorator(fn)
+    return decorator
+
+mcp.tool = _configurable_tool
+
 # ── Client Rate Limiting & Metering ──────────────────────────────────────────
 CLIENT_CALL_LIMITS: Dict[str, List[float]] = {}
 MAX_CALLS_PER_MINUTE = 60
@@ -150,6 +207,7 @@ def teamzero_run_gauntlet(branch: str = "main", client_id: str = "anon") -> Dict
 def teamzero_submit_candidate(
     branch: str = "main",
     task_id: str = "TASK-PROD-001",
+    feature_id: str = "default",
     notes: str = "",
     client_id: str = "anon"
 ) -> Dict[str, Any]:
@@ -162,10 +220,23 @@ def teamzero_submit_candidate(
         sha = "000000000000"
 
     # Assemble candidate manifest from current repo state
-    spec_path = SPECS_DIR / "refund_spec.json"
+    all_specs = sorted(list(SPECS_DIR.glob("*.json"))) if SPECS_DIR.exists() else []
+    spec_path = None
+    if feature_id and feature_id != "default":
+        for p in all_specs:
+            if feature_id.lower() in p.stem.lower():
+                spec_path = p
+                break
+    if not spec_path and all_specs:
+        spec_path = all_specs[0]
+
     spec_data = {}
-    if spec_path.exists():
+    if spec_path and spec_path.exists():
         spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
+
+    mod_name = spec_data.get("module", "")
+    entry_file = str(Path(__file__).parent / (mod_name.replace(".", "/") + ".py")) if mod_name else str(Path(__file__).parent / "teamzero" / "refund_service.py")
+    entry_fn = spec_data.get("function", "calculate_refund")
 
     candidate_manifest = {
         "task_id": task_id,
@@ -173,16 +244,11 @@ def teamzero_submit_candidate(
         "author_agent": f"mcp:{client_id}",
         "notes": notes,
         "entry": {
-            "file": str(Path(__file__).parent / "teamzero" / "refund_service.py"),
-            "function": "calculate_refund"
+            "file": entry_file,
+            "function": entry_fn
         },
         "diff": _git_cmd("diff", "HEAD~1", "HEAD") if sha != "000000000000" else "+# Fresh candidate submission",
         "spec": spec_data,
-        "tests": [
-            {"name": "test_r1_unopened_within_30_days", "references": ["R1"], "assertions": 3},
-            {"name": "test_r2_opened_within_30_days", "references": ["R2"], "assertions": 2},
-            {"name": "test_r3_past_30_days_receives_zero", "references": ["R3"], "assertions": 2}
-        ],
         "repair_attempts": 0
     }
 
@@ -274,6 +340,546 @@ def teamzero_ask_founder(
         "ask_id": ask_id,
         "note": "Question batched into the founder's management digest."
     }
+
+
+@mcp.tool()
+def teamzero_check_merge(ref: str = "HEAD", client_id: str = "anon") -> Dict[str, Any]:
+    """Evaluates whether all cryptographic and governance conditions are satisfied for merge.
+    Checks:
+    1. Deterministic gauntlet receipt
+    2. L1 red team breaker receipt (zero critical/high findings)
+    3. Evidence Graph open blocker status
+    4. Founder approval requirement based on autonomy level.
+    """
+    _authorize_client(client_id, cost=2)
+    from teamzero.merge_gate import evaluate_merge_prerequisites
+    res = evaluate_merge_prerequisites(target_ref=ref)
+    return res
+
+
+@mcp.tool()
+def teamzero_query_evidence(
+    task_id: Optional[str] = None,
+    severity: Optional[str] = None,
+    status: Optional[str] = None,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Queries the Typed Evidence Graph for past test and probe findings.
+    Allows agents to inspect past defects, skip redundant probes, and identify merge blockers."""
+    _authorize_client(client_id)
+    from teamzero.evidence import EvidenceGraph
+    ev_graph = EvidenceGraph()
+    all_nodes = ev_graph.list_nodes(task_id=task_id)
+    
+    filtered = []
+    for n in all_nodes:
+        if severity and n.severity != severity.upper():
+            continue
+        if status and n.status != status.upper():
+            continue
+        filtered.append(n.to_dict())
+
+    return {
+        "total_nodes": len(filtered),
+        "nodes": filtered[:25],
+        "blocking_count": len([n for n in filtered if n.get("severity") in ("CRITICAL", "HIGH") and n.get("status") == "OPEN"])
+    }
+
+
+@mcp.tool()
+def teamzero_report_health(client_id: str = "anon") -> Dict[str, Any]:
+    """Returns real-time Living SLA & Health Dashboard report.
+    Reports unresolved critical issues, active SLA breaches, and agent trust violations."""
+    _authorize_client(client_id)
+    from teamzero.health import SLADashboard
+    dash = SLADashboard()
+    rep = dash.compute_health()
+    return {
+        "overall_status": rep.overall_status,
+        "unresolved_critical_count": rep.unresolved_critical_count,
+        "sla_breaches": rep.sla_breaches,
+        "trust_violations": rep.trust_violations,
+        "metrics": rep.metrics
+    }
+
+
+@mcp.tool()
+def teamzero_audit_supply_chain(client_id: str = "anon") -> Dict[str, Any]:
+    """Runs deep XZ-grade supply chain & dependency inspection on repository.
+    Detects obfuscated payloads in test fixtures, dangerous dynamic build hooks,
+    and typosquatting on declared project dependencies."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.supply_chain import SupplyChainScanner
+    from teamzero.config import ROOT_DIR
+    scanner = SupplyChainScanner(ROOT_DIR)
+    risks = scanner.run_full_scan()
+    return {
+        "clean": len(risks) == 0,
+        "total_findings": len(risks),
+        "findings": [
+            {
+                "id": r.risk_id,
+                "severity": r.severity,
+                "category": r.category,
+                "target": r.target_path,
+                "description": r.description
+            } for r in risks
+        ]
+    }
+
+
+@mcp.tool()
+def teamzero_audit_ratchet(client_id: str = "anon") -> Dict[str, Any]:
+    """Audits the self-healing ratchet check registry.
+    Returns check velocity, identifies stale rules, and surfaces auto-proposed checks
+    derived from resolved Evidence Graph nodes."""
+    _authorize_client(client_id)
+    from teamzero.ratchet import audit_ratchet_health
+    return audit_ratchet_health()
+
+
+@mcp.tool()
+def teamzero_ideate_spec(
+    title: str,
+    persona: str,
+    pov: str,
+    invariants: List[str],
+    decision_table: List[Dict[str, str]],
+    technique: str = "Brainstorming",
+    hmw_prompt: str = "",
+    failure_inversions: Optional[List[Dict[str, str]]] = None,
+    moscow_must: Optional[List[str]] = None,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Ingests a Design Thinking / Software Ideation brief directly via MCP.
+    Creates an ASK markdown document in .teamzero/inbox/asks/ and compiles an executable
+    decision-table specification into .teamzero/memory/specs/ for $0 token automated testing."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.ideation import (
+        DesignThinkingBrief,
+        EmpathizePhase,
+        DefinePhase,
+        IdeatePhase,
+        PrototypePhase,
+        IdeationTestRule,
+        save_brief_to_inbox,
+        compile_brief_to_spec
+    )
+
+    rules = [
+        IdeationTestRule(
+            rule_id=r.get("rule_id", f"RULE_{idx:02d}"),
+            condition=r.get("condition", ""),
+            expected_outcome=r.get("expected_outcome", "")
+        )
+        for idx, r in enumerate(decision_table, 1)
+    ]
+
+    brief = DesignThinkingBrief(
+        title=title,
+        author=f"mcp:{client_id}",
+        empathize=EmpathizePhase(target_persona=persona),
+        define=DefinePhase(
+            pov_statement=pov,
+            hmw_prompt=hmw_prompt,
+            invariants=invariants
+        ),
+        ideate=IdeatePhase(
+            technique=technique,
+            negative_failure_modes=failure_inversions or []
+        ),
+        prototype=PrototypePhase(
+            moscow_must=moscow_must or []
+        ),
+        test_rules=rules
+    )
+
+    saved_ask = save_brief_to_inbox(brief)
+    saved_spec = compile_brief_to_spec(brief)
+
+    return {
+        "status": "IDEATION_SEALED",
+        "title": title,
+        "ask_path": str(saved_ask),
+        "spec_path": str(saved_spec),
+        "rules_compiled": len(rules),
+        "invariants_locked": len(invariants)
+    }
+
+
+@mcp.tool()
+def teamzero_race_hypotheses(
+    spec_id: Optional[str] = None,
+    peers: int = 3,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Races parallel peer implementation hypotheses against a decision-table spec.
+    Evaluates each candidate via Gauntlet + Task Evaluator and returns a ranked leaderboard."""
+    _authorize_client(client_id, cost=5)
+    from teamzero.racing import race_peer_hypotheses
+    all_specs = sorted(list(SPECS_DIR.glob("*.json"))) if SPECS_DIR.exists() else []
+    target = None
+    if spec_id:
+        for p in all_specs:
+            if spec_id.lower() in p.stem.lower():
+                target = p
+                break
+    if not target and all_specs:
+        target = all_specs[0]
+
+    if not target:
+        return {"status": "ERROR", "message": f"No spec found in {SPECS_DIR}"}
+
+    return race_peer_hypotheses(target, num_peers=peers)
+
+
+@mcp.tool()
+def teamzero_synthesize_learnings(
+    task_id: str,
+    feature_name: str = "Feature",
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Generates an Architecture Decision Record (ADR) and updates Living Map cards
+    from completed task discoveries and resolved Evidence Graph nodes."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.synthesize import synthesize_task_learnings
+    return synthesize_task_learnings(task_id, feature_name=feature_name)
+
+
+@mcp.tool()
+def teamzero_list_canaries(client_id: str = "anon") -> Dict[str, Any]:
+    """Inspects the security canary event lineage ledger.
+    Returns all logged canary breach events, leaked paths, author agents, and correlated evidence nodes."""
+    _authorize_client(client_id)
+    from teamzero.canary_lineage import list_canary_events
+    events = list_canary_events()
+    return {
+        "total_events": len(events),
+        "events": events
+    }
+
+
+@mcp.tool()
+def teamzero_get_model_routing(client_id: str = "anon") -> Dict[str, Any]:
+    """Inspects multi-tier model routing and cost estimates (Lite, Standard, Frontier)."""
+    _authorize_client(client_id)
+    from teamzero.model_router import ModelRouter
+    router = ModelRouter()
+    return {
+        "default_provider": router.config.get("default_provider"),
+        "tiers": router.config.get("tiers"),
+        "providers": list(router.config.get("providers", {}).keys())
+    }
+
+
+@mcp.tool()
+def teamzero_generate_pr_review(
+    branch: str,
+    base_branch: str = "main",
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Generates structured, line-indexed GitHub Pull Request review feedback markdown
+    translated directly from breaker findings and Evidence Graph records."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.peer_review import PeerReviewBot, ReviewComment
+    bot = PeerReviewBot()
+    # Pull findings from EvidenceGraph for this branch
+    from teamzero.evidence import EvidenceGraph
+    ev_graph = EvidenceGraph()
+    all_nodes = ev_graph.list_nodes()
+    comments = []
+    for n in all_nodes:
+        if n.status == "OPEN" and n.severity in ("CRITICAL", "HIGH"):
+            comments.append(
+                ReviewComment(
+                    file_path=n.repro.split(":")[0] if ":" in n.repro else "src/code.py",
+                    line_number=int(n.repro.split(":")[1]) if ":" in n.repro and n.repro.split(":")[1].isdigit() else 1,
+                    rule=n.type,
+                    severity=n.severity,
+                    message=f"{n.claim} — {n.evidence}",
+                    suggested_fix=None
+                )
+            )
+    out_path = bot.generate_review_markdown(branch, base_branch, comments)
+    return {
+        "status": "REVIEW_DRAFT_GENERATED",
+        "review_file": str(out_path),
+        "total_comments": len(comments),
+        "blocking_count": len([c for c in comments if c.severity in ("CRITICAL", "HIGH")])
+    }
+
+
+@mcp.tool()
+def teamzero_debug_time_travel(
+    run_id: str,
+    seq: int,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Time-travel rewinds execution to an exact journal sequence number.
+    Reconstructs findings, active tasks, trust deltas, and gate verdicts at that precise moment."""
+    _authorize_client(client_id)
+    from teamzero.debugger import TimeTravelDebugger
+    debugger = TimeTravelDebugger(run_id=run_id)
+    snapshot = debugger.rewind_to(target_seq=seq)
+    return {
+        "run_id": snapshot.run_id,
+        "target_seq": snapshot.target_seq,
+        "events_replayed": snapshot.events_replayed,
+        "state": snapshot.reconstructed_state
+    }
+
+
+@mcp.tool()
+def teamzero_check_adaptive_triggers(catchup: bool = False, client_id: str = "anon") -> Dict[str, Any]:
+    """Checks adaptive triggers (daily anti-slop audits, weekly canary rotations).
+    Surfaces overdue triggers across reboots and optionally executes catch-up warmup routines."""
+    _authorize_client(client_id)
+    from teamzero.triggers import AdaptiveTriggerEngine
+    engine = AdaptiveTriggerEngine()
+    statuses = engine.evaluate_triggers()
+    executed = []
+    if catchup:
+        executed = engine.run_pending_triggers()
+    return {
+        "triggers": [
+            {
+                "id": s.trigger_id,
+                "status": s.status,
+                "last_run": s.last_run_timestamp,
+                "next_due": s.next_due_timestamp
+            } for s in statuses
+        ],
+        "executed_catchups": executed
+    }
+
+
+@mcp.tool()
+def teamzero_get_tasks(status: Optional[str] = None, client_id: str = "anon") -> Dict[str, Any]:
+    """Lists all structured microtasks in the dependency registry.
+    Returns task IDs, titles, complexity scores, dependencies, and execution states."""
+    _authorize_client(client_id)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    tasks = reg.load_tasks()
+    if status:
+        tasks = [t for t in tasks if t.status == status.upper()]
+    return {
+        "total_tasks": len(tasks),
+        "tasks": [t.to_dict() for t in tasks]
+    }
+
+
+@mcp.tool()
+def teamzero_get_next_task(client_id: str = "anon") -> Dict[str, Any]:
+    """Retrieves the highest priority unblocked task ready for execution.
+    A task is ready if its status is TODO and all its prerequisite dependencies are satisfied."""
+    _authorize_client(client_id)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    nxt = reg.get_next_task()
+    if not nxt:
+        return {"ready": False, "message": "No unblocked tasks available."}
+    return {
+        "ready": True,
+        "task": nxt.to_dict()
+    }
+
+
+@mcp.tool()
+def teamzero_update_task_status(
+    task_id: str,
+    status: str,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Updates the status of an active task (TODO, IN_PROGRESS, GAUNTLET_PASS).
+    Notice: Following TeamZero Invariant 03, final VERIFIED status is computed
+    strictly through the automated merge gauntlet and cryptographic receipts."""
+    _authorize_client(client_id)
+    allowed = ["TODO", "IN_PROGRESS", "BLOCKED", "GAUNTLET_PASS"]
+    if status.upper() not in allowed:
+        return {
+            "status": "REJECTED",
+            "message": f"Agents cannot assert '{status}'. Allowed statuses: {', '.join(allowed)}. Final completion is computed by verification."
+        }
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    updated = reg.update_status(task_id, status.upper(), agent_id=f"mcp:{client_id}")
+    if not updated:
+        return {"status": "NOT_FOUND", "message": f"Task {task_id} not found."}
+    return {
+        "status": "UPDATED",
+        "task": updated.to_dict()
+    }
+
+
+@mcp.tool()
+def teamzero_add_task(
+    task_id: str,
+    title: str,
+    description: str = "",
+    dependencies: Optional[List[str]] = None,
+    complexity: int = 3,
+    target_files: Optional[List[str]] = None,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Creates a new task in the dependency registry."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    t = reg.add_task(
+        task_id=task_id,
+        title=title,
+        description=description,
+        dependencies=dependencies,
+        complexity=complexity,
+        target_files=target_files
+    )
+    return {"status": "CREATED", "task": t.to_dict()}
+
+
+@mcp.tool()
+def teamzero_remove_task(task_id: str, client_id: str = "anon") -> Dict[str, Any]:
+    """Removes a task from the registry and cleans up dangling dependencies."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    success = reg.remove_task(task_id)
+    return {"status": "REMOVED" if success else "NOT_FOUND", "task_id": task_id}
+
+
+@mcp.tool()
+def teamzero_expand_task(
+    task_id: str,
+    subtask_titles: List[str],
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Breaks down a complex task (complexity > 5) into smaller, sequenced subtasks."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    subs = reg.expand_task(task_id, subtask_titles)
+    return {
+        "status": "EXPANDED",
+        "parent_id": task_id,
+        "subtasks": [s.to_dict() for s in subs]
+    }
+
+
+@mcp.tool()
+def teamzero_add_dependency(
+    task_id: str,
+    depends_on_id: str,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Adds a prerequisite dependency to a task."""
+    _authorize_client(client_id)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    ok = reg.add_dependency(task_id, depends_on_id)
+    return {"status": "ADDED" if ok else "FAILED", "task_id": task_id, "depends_on": depends_on_id}
+
+
+@mcp.tool()
+def teamzero_remove_dependency(
+    task_id: str,
+    depends_on_id: str,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Removes a prerequisite dependency from a task."""
+    _authorize_client(client_id)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    ok = reg.remove_dependency(task_id, depends_on_id)
+    return {"status": "REMOVED" if ok else "FAILED", "task_id": task_id, "depends_on": depends_on_id}
+
+
+@mcp.tool()
+def teamzero_validate_dependencies(client_id: str = "anon") -> Dict[str, Any]:
+    """Validates the entire task DAG: detects circular dependency loops and missing dependencies."""
+    _authorize_client(client_id)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    return reg.validate_dependencies()
+
+
+@mcp.tool()
+def teamzero_analyze_complexity(client_id: str = "anon") -> Dict[str, Any]:
+    """Analyzes task complexity distribution and surfaces tasks needing expansion before coding."""
+    _authorize_client(client_id)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    return reg.analyze_complexity()
+
+
+@mcp.tool()
+def teamzero_get_task(task_id: str, client_id: str = "anon") -> Dict[str, Any]:
+    """Retrieves full details of a specific task by its ID."""
+    _authorize_client(client_id)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    t = reg.get_task(task_id)
+    if not t:
+        return {"error": f"Task {task_id} not found."}
+    return t.to_dict()
+
+
+@mcp.tool()
+def teamzero_parse_prd(
+    prd_content: str,
+    feature_prefix: str = "TASK",
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Parses a PRD or Ask brief into an ordered DAG of microtasks."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    tasks = reg.decompose_prd(prd_content, feature_prefix=feature_prefix)
+    return {
+        "status": "PARSED",
+        "total_tasks": len(tasks),
+        "tasks": [t.to_dict() for t in tasks]
+    }
+
+
+@mcp.tool()
+def teamzero_add_subtask(
+    parent_id: str,
+    title: str,
+    complexity: int = 2,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Adds a single subtask to a parent task."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    sub = reg.add_subtask(parent_id, title, complexity=complexity)
+    if not sub:
+        return {"error": f"Parent task {parent_id} not found."}
+    return {"status": "CREATED", "subtask": sub.to_dict()}
+
+
+@mcp.tool()
+def teamzero_remove_subtask(
+    parent_id: str,
+    subtask_id: str,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Removes a subtask from a parent task."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    ok = reg.remove_subtask(parent_id, subtask_id)
+    return {"status": "REMOVED" if ok else "NOT_FOUND", "parent_id": parent_id, "subtask_id": subtask_id}
+
+
+@mcp.tool()
+def teamzero_fix_dependencies(client_id: str = "anon") -> Dict[str, Any]:
+    """Auto-fixes dangling dependencies in the task DAG."""
+    _authorize_client(client_id)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    return reg.fix_dependencies()
+
 
 
 # ── Resources ────────────────────────────────────────────────────────────────
