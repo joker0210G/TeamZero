@@ -1,6 +1,6 @@
 """TeamZero: Autonomous Agentic AI Software Organization Foundation Package."""
 
-__version__ = "0.1.0.dev1"
+__version__ = "0.1.0-alpha.3"
 
 from teamzero.init_project import init_project
 

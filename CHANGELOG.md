@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0.dev1] - 2026-10-12
+## [0.1.0-alpha.3] - 2026-10-12 (Alpha Dev Build)
 
 ### Added
 - **Dynamic Project Root Discovery** (`teamzero/config.py`): Dynamically resolves active project root via `TZ_PROJECT_DIR`, upward directory inspection (`.teamzero` / `.git`), or package fallback.
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `tz.py`: Streamlined to a lightweight entry point delegating to `teamzero.cli.main`.
-- Package version aligned to `0.1.0.dev1` across `pyproject.toml` and `teamzero/__init__.py`.
+- Package version aligned to `0.1.0-alpha.3` (Alpha Dev Build) across `pyproject.toml` and `teamzero/__init__.py`.
 
 ## [0.1.0-alpha.2] - 2026-10-12
 

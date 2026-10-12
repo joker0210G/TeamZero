@@ -14,15 +14,15 @@ from typing import Optional
 
 
 STARTER_CONSTITUTION = """# TeamZero Quality Constitution
-# Version: 0.1.0.dev1
+# Version: 0.1.0-alpha.3 (Alpha Dev Build)
 # The machine-enforced governance layer of TeamZero.
 # Invariant: CI and the pipeline enforce this constitution. Agents cannot modify this file.
 
 organization:
   name: "{project_name}"
   mode: "Solo Founder + Autonomous Agents"
-  version: "0.1.0.dev1"
-  framework_version: "0.1.0.dev1"
+  version: "0.1.0-alpha.3"
+  framework_version: "0.1.0-alpha.3"
 
 invariants:
   - id: INV-01

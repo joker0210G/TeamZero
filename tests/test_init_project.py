@@ -43,7 +43,7 @@ def test_init_project_creates_structure():
         # Check constitution contents
         const_data = yaml.safe_load((org_dir / "constitution.yaml").read_text(encoding="utf-8"))
         assert const_data["organization"]["name"] == "TestApp"
-        assert const_data["organization"]["version"] == "0.1.0.dev1"
+        assert const_data["organization"]["version"] == "0.1.0-alpha.3"
         assert len(const_data["invariants"]) == 5
 
         # Check ledgers exist
