@@ -24,12 +24,18 @@ def calculate_refund(
         ValueError: If amount_paid is negative or days_since_purchase is negative.
         TypeError: If parameter types do not conform to signature.
     """
-    if not isinstance(amount_paid, (int, float)):
-        raise TypeError(f"amount_paid must be numeric, got {type(amount_paid).__name__}")
-    if not isinstance(days_since_purchase, int):
-        raise TypeError(f"days_since_purchase must be int, got {type(days_since_purchase).__name__}")
+    # Guard parameter types and reject bool subclass smuggling (EF-03)
+    if isinstance(amount_paid, bool) or not isinstance(amount_paid, (int, float)):
+        raise TypeError(f"amount_paid must be numeric and not bool, got {type(amount_paid).__name__}")
+    if isinstance(days_since_purchase, bool) or not isinstance(days_since_purchase, int):
+        raise TypeError(f"days_since_purchase must be int and not bool, got {type(days_since_purchase).__name__}")
     if not isinstance(item_condition, str):
         raise TypeError(f"item_condition must be string, got {type(item_condition).__name__}")
+
+    # Guard non-finite numbers (NaN / inf / -inf) (EF-01, EF-02)
+    import math
+    if not math.isfinite(amount_paid):
+        raise ValueError(f"amount_paid must be a finite number: {amount_paid}")
 
     # Guard negative inputs (Prevents Traps 2)
     if amount_paid < 0.0:
@@ -41,7 +47,8 @@ def calculate_refund(
 
     # Rule R1: Unopened item returned within 30 calendar days (full refund)
     if days_since_purchase <= 30 and clean_condition == "unopened":
-        refund_val = round(float(amount_paid), 2)
+        # EF-04: Rounding must never refund more than original amount paid
+        refund_val = min(round(float(amount_paid), 2), float(amount_paid))
         return {
             "refund": refund_val,
             "currency": "USD",
@@ -51,7 +58,9 @@ def calculate_refund(
 
     # Rule R2: Opened item returned within 30 calendar days (80% refund)
     if days_since_purchase <= 30 and clean_condition == "opened":
-        refund_val = round(float(amount_paid) * 0.8, 2)
+        # EF-04: Rounding must never exceed 80% ceiling or original amount paid
+        max_allowed = float(amount_paid) * 0.8
+        refund_val = min(round(max_allowed, 2), max_allowed)
         return {
             "refund": refund_val,
             "currency": "USD",
