@@ -1,0 +1,43 @@
+default_provider: gemini
+tiers:
+  lite:
+    description: Fast log parsing, formatting, schema validation
+    provider: gemini
+    model: gemini-2.5-flash
+    estimated_cost_per_1k: 0.0001
+  standard:
+    description: Test generation, inbox triage, refactoring
+    provider: anthropic
+    model: claude-3-5-haiku
+    estimated_cost_per_1k: 0.001
+  frontier:
+    description: Security red-teaming, ADR synthesis, architecture review
+    provider: anthropic
+    model: claude-3-5-sonnet
+    estimated_cost_per_1k: 0.015
+providers:
+  gemini:
+    env_key: GEMINI_API_KEY
+    available_models:
+    - gemini-2.5-flash
+    - gemini-1.5-pro
+    - gemini-2.5-pro
+  anthropic:
+    env_key: ANTHROPIC_API_KEY
+    available_models:
+    - claude-3-5-haiku
+    - claude-3-5-sonnet
+    - claude-3-opus
+  openai:
+    env_key: OPENAI_API_KEY
+    available_models:
+    - gpt-4o-mini
+    - gpt-4o
+    - o1
+    - o3-mini
+  ollama:
+    endpoint: http://localhost:11434
+    available_models:
+    - llama3.3
+    - qwen2.5-coder
+    - deepseek-r1:8b

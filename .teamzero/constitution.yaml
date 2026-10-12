@@ -1,12 +1,12 @@
 # TeamZero Quality Constitution
-# Version: 0.1.0-alpha.1
+# Version: 0.1.0-alpha.2
 # The machine-enforced governance layer of TeamZero.
 # Invariant: CI and the pipeline enforce this constitution. Agents cannot modify this file.
 
 organization:
   name: "TeamZero"
   mode: "Solo Founder + Autonomous Agents"
-  version: "0.1.0-alpha.1"
+  version: "0.1.0-alpha.2"
 
 invariants:
   - id: INV-01

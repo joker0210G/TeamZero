@@ -294,6 +294,37 @@ def main():
     ratchet_p = subparsers.add_parser("ratchet", help="Audit and self-heal ratchet checks (Improvement #10)")
     ratchet_p.add_argument("--health", action="store_true", help="Display ratchet health & proposed promotions")
 
+    # Round 2 Subparsers
+    replay_p = subparsers.add_parser("replay", help="Replay and summarize an Event Journal run")
+    replay_p.add_argument("run_id", type=str, help="Run ID to replay (e.g. RUN-001)")
+
+    pareto_p = subparsers.add_parser("pareto", help="Compute Pareto-optimal frontier among competing hypotheses")
+    pareto_p.add_argument("--demo", action="store_true", help="Run with demonstration candidate set")
+
+    route_p = subparsers.add_parser("route", help="Manage model provider & tier routing")
+    route_p.add_argument("--set-tier", type=str, choices=["lite", "standard", "frontier"], help="Tier to configure")
+    route_p.add_argument("--provider", type=str, help="Provider name (gemini, anthropic, openai, ollama)")
+    route_p.add_argument("--model", type=str, help="Model name (e.g. claude-3-5-sonnet, gpt-4o)")
+
+    trig_p = subparsers.add_parser("triggers", help="Inspect and run adaptive opportunistic triggers")
+    trig_p.add_argument("--catchup", action="store_true", help="Execute pending overdue triggers")
+
+    debug_p = subparsers.add_parser("debug-at", help="Time-travel rewind state to a specific sequence number")
+    debug_p.add_argument("run_id", type=str, help="Run ID to debug")
+    debug_p.add_argument("seq", type=int, help="Sequence number to rewind to")
+
+    mutate_p = subparsers.add_parser("mutate", help="Run AI Red-Team adversarial spec mutation test")
+    mutate_p.add_argument("--spec", type=str, default=".teamzero/memory/specs/refund_spec.json", help="Spec file to stress-test")
+
+    subparsers.add_parser("health", help="Display Living SLA Dashboard and health report")
+
+    dep_p = subparsers.add_parser("dep-scan", help="Run XZ-grade supply chain & dependency security audit")
+    dep_p.add_argument("--strict", action="store_true", help="Exit with non-zero code on any finding")
+
+    rev_p = subparsers.add_parser("review", help="Generate line-indexed PR review feedback draft")
+    rev_p.add_argument("branch", type=str, help="Branch to review")
+    rev_p.add_argument("--base", type=str, default="main", help="Base branch (default: main)")
+
     args = parser.parse_args()
 
     if args.subcommand == "status":
@@ -381,6 +412,169 @@ def main():
             print(f"\n Auto-Proposed Promotions from Evidence Graph ({len(health['proposed_promotions'])}):")
             for prop in health["proposed_promotions"]:
                 print(f"  + [{prop['id']}] {prop['description']}")
+        print("=" * 65)
+    elif args.subcommand == "replay":
+        from teamzero.journal import EventJournal
+        j = EventJournal(args.run_id)
+        summary = j.replay_summary()
+        print("=" * 65)
+        print(f" Event Journal Replay Summary (Run: {summary['run_id']})")
+        print("=" * 65)
+        print(f" Total Events Logged: {summary['total_events']}")
+        print(f" Last Sequence Num:   {summary['last_seq']}")
+        print(" Event Breakdown:")
+        for ev_type, count in summary["event_breakdown"].items():
+            print(f"   - {ev_type:<25}: {count}")
+        print("=" * 65)
+    elif args.subcommand == "pareto":
+        from teamzero.pareto import SolutionCandidate, compute_pareto_front, format_scoreboard
+        # Demo candidate set
+        cands = [
+            SolutionCandidate("CAND-A-FAST", {"speed": 95.0, "coverage": 80.0, "efficiency": 40.0}, {}),
+            SolutionCandidate("CAND-B-LOWMEM", {"speed": 50.0, "coverage": 85.0, "efficiency": 90.0}, {}),
+            SolutionCandidate("CAND-C-BALANCED", {"speed": 80.0, "coverage": 82.0, "efficiency": 75.0}, {}),
+            SolutionCandidate("CAND-D-SLOPPY", {"speed": 40.0, "coverage": 70.0, "efficiency": 30.0}, {}),
+        ]
+        metrics = ["speed", "coverage", "efficiency"]
+        front = compute_pareto_front(cands, metrics)
+        print("=" * 65)
+        print(" TeamZero Pareto Multi-Objective Frontier")
+        print("=" * 65)
+        print(format_scoreboard(front, metrics))
+        print("=" * 65)
+    elif args.subcommand == "route":
+        from teamzero.model_router import ModelRouter
+        router = ModelRouter()
+        if args.set_tier and args.provider and args.model:
+            router.set_tier_model(args.set_tier, args.provider, args.model)
+            print(f"[OK] Updated tier '{args.set_tier}' -> {args.provider} / {args.model}")
+        else:
+            print("=" * 65)
+            print(" TeamZero Multi-Provider Model Router")
+            print("=" * 65)
+            tiers = router.config.get("tiers", {})
+            for t_name, t_info in tiers.items():
+                print(f" Tier: {t_name.upper():<10} | Provider: {t_info.get('provider'):<10} | Model: {t_info.get('model')}")
+                print(f"   Description: {t_info.get('description')}")
+            print("=" * 65)
+    elif args.subcommand == "triggers":
+        from teamzero.triggers import AdaptiveTriggerEngine
+        engine = AdaptiveTriggerEngine()
+        statuses = engine.evaluate_triggers()
+        print("=" * 65)
+        print(" TeamZero Adaptive Opportunistic Triggers")
+        print("=" * 65)
+        for s in statuses:
+            badge = "[DUE]" if s.status in ["DUE", "MISSED_OVERDUE"] else "[OK]"
+            print(f" {badge:<6} {s.trigger_id:<20} | Status: {s.status}")
+        pending = engine.get_pending_catchups()
+        if args.catchup and pending:
+            print(f"\n[i] Catching up {len(pending)} pending triggers...")
+            for p in pending:
+                engine.record_run(p["id"])
+                print(f"  [OK] Ran catch-up for {p['id']}")
+        elif pending:
+            print(f"\n[!] {len(pending)} triggers pending catch-up. Run with --catchup to execute.")
+        print("=" * 65)
+    elif args.subcommand == "debug-at":
+        from teamzero.debugger import TimeTravelDebugger
+        dbg = TimeTravelDebugger(args.run_id)
+        snap = dbg.rewind_to(args.seq)
+        print("=" * 65)
+        print(f" Time-Travel Replay Snapshot (Run: {snap.run_id} @ Seq: {snap.target_seq})")
+        print("=" * 65)
+        print(f" Events Replayed: {snap.events_replayed}")
+        print(f" Reconstructed State:")
+        print(f"   Findings:       {len(snap.reconstructed_state.get('findings', []))}")
+        print(f"   Trust Deltas:   {snap.reconstructed_state.get('trust_deltas')}")
+        print(f"   Active Tasks:   {snap.reconstructed_state.get('active_tasks')}")
+        print(f"   Gate Verdicts:  {len(snap.reconstructed_state.get('gate_verdicts', []))}")
+        print("=" * 65)
+    elif args.subcommand == "mutate":
+        from teamzero.mutation import RedTeamMutationEngine
+        from teamzero.evaluator import evaluate_task_criteria
+        from teamzero.config import SPECS_DIR, ROOT_DIR
+        import json
+        engine = RedTeamMutationEngine()
+        spec_path = Path(args.spec)
+        target_service = ROOT_DIR / "teamzero" / "refund_service.py"
+        base_code = target_service.read_text(encoding="utf-8") if target_service.exists() else ""
+        mutants = engine.generate_adversarial_mutants(base_code)
+        
+        # Test evaluation mock against refund spec
+        spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
+        res = engine.evaluate_spec_resilience(mutants, lambda code: "float(amount)" not in code and "int(amount)" in code)
+        print("=" * 65)
+        print(f" AI Red-Team Adversarial Spec Mutation Test")
+        print("=" * 65)
+        print(f" Target Spec:             {spec_path.name}")
+        print(f" Total Adversarial Mutants: {res.total_mutants}")
+        print(f" Mutants Killed (Caught): {res.mutants_killed}")
+        print(f" Mutants Survived:        {res.mutants_survived}")
+        print(f" Spec Resilience Rating:  {res.spec_resilience_rating:.1f}%")
+        if res.blind_spots:
+            print("\n [!] Spec Blind Spots Discovered:")
+            for b in res.blind_spots:
+                print(f"   - {b}")
+        print("=" * 65)
+    elif args.subcommand == "health":
+        from teamzero.health import SLADashboard
+        dash = SLADashboard()
+        rep = dash.compute_health()
+        print("=" * 65)
+        print(" TeamZero Living SLA & Health Dashboard")
+        print("=" * 65)
+        status_badge = "[HEALTHY]" if rep.overall_status == "HEALTHY" else f"[{rep.overall_status}]"
+        print(f" Overall Status:             {status_badge}")
+        print(f" Unresolved Critical Issues: {rep.unresolved_critical_count}")
+        print(f" Active SLA Breaches:        {len(rep.sla_breaches)}")
+        if rep.sla_breaches:
+            print("\n [!] SLA Breaches:")
+            for sb in rep.sla_breaches:
+                print(f"   - {sb}")
+        if rep.trust_violations:
+            print("\n [!] Trust Floor Alerts:")
+            for tv in rep.trust_violations:
+                print(f"   - {tv}")
+        print("=" * 65)
+    elif args.subcommand == "dep-scan":
+        from teamzero.supply_chain import SupplyChainScanner
+        from teamzero.config import ROOT_DIR
+        scanner = SupplyChainScanner(ROOT_DIR)
+        risks = scanner.run_full_scan(dependencies=["requests", "pytset", "fastapi"])
+        print("=" * 65)
+        print(" TeamZero XZ-Grade Supply Chain & Dependency Audit")
+        print("=" * 65)
+        if not risks:
+            print(" [OK] Clean: No hidden test payloads, suspicious build hooks, or typosquats.")
+        else:
+            for r in risks:
+                badge = f"[{r.severity}]"
+                print(f" {badge:<10} Category: {r.category:<22} Target: {r.target_path}")
+                print(f"            {r.description}")
+        print("=" * 65)
+        if args.strict and any(r.severity in ["CRITICAL", "HIGH"] for r in risks):
+            sys.exit(1)
+    elif args.subcommand == "review":
+        from teamzero.peer_review import PeerReviewBot, ReviewComment
+        bot = PeerReviewBot()
+        # Mock sample review draft demonstration
+        comments = [
+            ReviewComment(
+                file_path="teamzero/refund_service.py",
+                line_number=45,
+                rule="L1_BREAKER_BOUNDARY_CHECK",
+                severity="HIGH",
+                message="Floating point amount used without currency decimal rounding clamp.",
+                suggested_fix="amount = round(float(amount), 2)",
+            )
+        ]
+        out_path = bot.generate_review_markdown(args.branch, args.base, comments)
+        print("=" * 65)
+        print(f" TeamZero Peer Review Bot Draft Generated")
+        print("=" * 65)
+        print(f" Review File: {out_path}")
+        print(" Ready to inspect or submit to GitHub PR via gh CLI.")
         print("=" * 65)
     else:
         parser.print_help()

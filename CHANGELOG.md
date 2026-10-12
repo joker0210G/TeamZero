@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2026-10-12
+
+### Added
+- **Event Journal & Replay Engine** (`teamzero/journal.py`, `tz replay <run_id>`): Immutable event-sourced logging of all execution steps with safe state resumption and deduplication of side effects.
+- **Time-Travel Debugger** (`teamzero/debugger.py`, `tz debug-at <seq>`): Step-by-step state rewind, inspection of active evidence/trust at any point in history, and hypothetical scenario forking.
+- **Pareto Scoreboard** (`teamzero/pareto.py`, `tz pareto`): Multi-objective non-dominated frontier evaluation (speed, coverage, memory efficiency) preserving nuance and architectural trade-offs.
+- **Solution Diversity Guard** (`teamzero/diversity.py`): Architectural niche classification preventing premature convergence and maintaining diverse exploration strategies in hypothesis pools.
+- **Multi-Provider Model Router** (`teamzero/model_router.py`, `tz route`): Dynamic tier allocation (`lite`, `standard`, `frontier`) with customizable provider selection (Gemini, Anthropic, OpenAI, Local Ollama) via `.teamzero/providers.yaml`.
+- **Adaptive Catch-Up Trigger Engine** (`teamzero/triggers.py`, `tz triggers`): Missed-interval detection tailored for dynamic, irregular PC sessions with opportunistic background catch-up execution.
+- **AI Red-Team Adversarial Spec Mutation Tester** (`teamzero/mutation.py`, `tz mutate`): Intelligent adversarial stress-testing employing Red Team agents to expose spec blind spots via order inversion, race simulation, and silent error suppression.
+- **Living SLA & Health Dashboard** (`teamzero/health.py`, `tz health`): 24-hour critical issue countdown and automated organizational health monitoring persisted to `.teamzero/health.json`.
+- **XZ-Grade Supply-Chain Defense Scanner** (`teamzero/supply_chain.py`, `tz dep-scan`): Detection of hidden test payloads in binary fixtures (CVE-2024-3094 vector), build hook inspection, and Levenshtein dependency typosquat analysis.
+- **Peer Review Bot** (`teamzero/peer_review.py`, `tz review <branch>`): Automated conversion of breaker findings into structured, line-annotated GitHub PR review markdown drafts.
+- **Comprehensive Verification Suite** (`tests/test_round2_improvements.py`): 9 comprehensive unit and integration tests verifying all 10 Round 2 systems.
+
 ## [0.1.0-alpha.1] - 2026-10-12
 
 ### Added

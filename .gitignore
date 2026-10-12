@@ -28,3 +28,7 @@ dump_teamzero_chat.py
 .teamzero/memory/tasks/
 .teamzero/redteam/canary_events.jsonl
 .teamzero/redteam/ratchet_registry.json
+.teamzero/journal/
+.teamzero/triggers/state.json
+.teamzero/health.json
+.teamzero/inbox/decisions/review_*.md

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "daily_audit",
+    "description": "Daily anti-slop code audit",
+    "interval_seconds": 86400,
+    "command": "audit"
+  },
+  {
+    "id": "canary_rotation",
+    "description": "Weekly canary token lineage check",
+    "interval_seconds": 604800,
+    "command": "canary"
+  }
+]
