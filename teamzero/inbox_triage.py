@@ -43,6 +43,20 @@ def get_pending_asks() -> List[Path]:
     return sorted(list(ASKS_DIR.glob("*.json")), key=lambda p: p.stat().st_mtime)
 
 
+def get_batched_asks() -> Dict[str, List[Path]]:
+    """Clusters pending asks by task_id for smart inbox batching (Improvement #9)."""
+    pending = get_pending_asks()
+    batches: Dict[str, List[Path]] = {}
+    for p in pending:
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            task_key = data.get("task_id") or "GENERAL"
+            batches.setdefault(task_key, []).append(p)
+        except Exception:
+            batches.setdefault("GENERAL", []).append(p)
+    return batches
+
+
 def get_pending_decisions() -> List[Path]:
     """Returns sorted list of pending ADR proposals."""
     if not DECISIONS_DIR.exists():

@@ -76,7 +76,15 @@ def cmd_status():
                         pass
     print(f" Total Payroll Burn:    {total_tokens:,} tokens (${total_cost:.4f} USD)")
 
-    # 4. Agent Trust Scores
+    # 4. Evidence Graph Vitals 
+    from teamzero.evidence import EvidenceGraph
+    ev_graph = EvidenceGraph()
+    all_ev = ev_graph.list_nodes()
+    open_ev = [n for n in all_ev if n.status == "OPEN"]
+    crit_high_ev = [n for n in open_ev if n.severity in ("CRITICAL", "HIGH")]
+    print(f" Evidence Graph:        {len(all_ev)} total nodes ({len(open_ev)} open, {len(crit_high_ev)} blocking)")
+
+    # 5. Agent Trust Scores
     print("\n Agent Trust Ledger:")
     print(f" {'AGENT / CLIENT ID':<30} | {'TRUST':<6} | {'AUTONOMY':<8}")
     print(" " + "-" * 50)
@@ -96,6 +104,84 @@ def cmd_status():
                     except Exception:
                         pass
     print("=" * 65)
+
+
+def cmd_budget():
+    """Prints the Budget Awareness Panel (Improvement #7)."""
+    const = load_constitution()
+    gov = const.get("governance", {})
+    cap = gov.get("token_budget_governor", {}).get("max_tokens_per_task", 35000)
+
+    total_tokens = 0
+    total_cost = 0.0
+    by_agent: dict[str, int] = {}
+    by_task: dict[str, int] = {}
+
+    if PAYROLL_LEDGER.exists():
+        with open(PAYROLL_LEDGER, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        rec = json.loads(line)
+                        tok = rec.get("total_tokens", 0)
+                        cost = rec.get("cost_usd", 0.0)
+                        aid = rec.get("agent_id", "unknown")
+                        tid = rec.get("task_id", "unknown")
+                        total_tokens += tok
+                        total_cost += cost
+                        by_agent[aid] = by_agent.get(aid, 0) + tok
+                        by_task[tid] = by_task.get(tid, 0) + tok
+                    except Exception:
+                        pass
+
+    from teamzero.evidence import EvidenceGraph
+    ev_graph = EvidenceGraph()
+    ev_nodes = ev_graph.list_nodes()
+    # Estimated savings: resolved nodes prevent breaker re-probing (~1,500 tokens per resolved node)
+    resolved_count = len([n for n in ev_nodes if n.status == "RESOLVED"])
+    est_savings = resolved_count * 1500
+
+    pct = min(100.0, (total_tokens / cap) * 100) if cap > 0 else 0.0
+    costliest_agent = max(by_agent.items(), key=lambda x: x[1]) if by_agent else ("None", 0)
+    cheapest_task = min(by_task.items(), key=lambda x: x[1]) if by_task else ("None", 0)
+
+    print("+" + "=" * 60 + "+")
+    print(f"|{'TeamZero Budget Awareness Panel':^60}|")
+    print("+" + "=" * 60 + "+")
+    print(f"| Token Budget Cap:          {cap:>10,} tokens                  |")
+    print(f"| Tokens Consumed:           {total_tokens:>10,} tokens ({pct:5.1f}%)        |")
+    print(f"| Total Payroll Cost:        ${total_cost:>9.4f} USD                    |")
+    print(f"| Top Token Consumer:        {costliest_agent[0][:20]:<20} ({costliest_agent[1]:,} tok) |")
+    print(f"| Leanest Task:              {cheapest_task[0][:20]:<20} ({cheapest_task[1]:,} tok) |")
+    print("+" + "-" * 60 + "+")
+    print(f"| Evidence Graph Savings:    ~{est_savings:>9,} tokens ({resolved_count} bugs fixed) |")
+    print("+" + "=" * 60 + "+")
+
+
+def cmd_evidence():
+    """Prints all nodes in the Typed Evidence Graph (Improvement #1)."""
+    from teamzero.evidence import EvidenceGraph
+    ev_graph = EvidenceGraph()
+    nodes = ev_graph.list_nodes()
+
+    print("=" * 70)
+    print(" TeamZero Typed Evidence Graph")
+    print("=" * 70)
+    if not nodes:
+        print(" [i] Evidence graph is empty. Run `tz breaker` to populate findings.")
+        print("=" * 70)
+        return
+
+    for n in nodes:
+        status_sym = "[x]" if n.status == "OPEN" else "[v]"
+        print(f" {status_sym} [{n.severity:<8}] {n.node_id} ({n.type})")
+        print(f"     Task:       {n.task_id} (Gen {n.generation})")
+        print(f"     Claim:      {n.claim}")
+        print(f"     Evidence:   {n.evidence[:80]}")
+        if n.resolved_by_commit:
+            print(f"     Resolved:   commit {n.resolved_by_commit[:8]}")
+        print(" " + "-" * 66)
+    print("=" * 70)
 
 
 def cmd_gauntlet():
@@ -145,13 +231,18 @@ def cmd_check_merge(ref: str = "HEAD"):
     b_detail = gates["redteam_breaker"]["detail"]
     print(f" [2] Red Team Breaker:         {'[PASS]' if b_pass else '[FAILED]'} ({b_detail})")
 
+    e_gate = gates.get("evidence_graph", {})
+    e_pass = e_gate.get("passed", True)
+    e_detail = e_gate.get("detail", "Clean")
+    print(f" [3] Evidence Graph Safety:    {'[PASS]' if e_pass else '[BLOCKED]'} ({e_detail})")
+
     f_req = gates["founder_approval"]["required"]
     f_grant = gates["founder_approval"]["granted"]
     f_rec = gates["founder_approval"]["receipt"]
     if f_req:
-        print(f" [3] Founder Approval Signoff: {'[SIGNED]' if f_grant else '[PENDING]'} ({f_rec or 'Review via tz inbox'})")
+        print(f" [4] Founder Approval Signoff: {'[SIGNED]' if f_grant else '[PENDING]'} ({f_rec or 'Review via tz inbox'})")
     else:
-        print(f" [3] Founder Approval Signoff: (Autonomous - Not required at Level 5)")
+        print(f" [4] Founder Approval Signoff: (Autonomous - Not required at Level 5)")
 
     print("-" * 65)
     if res["eligible_to_merge"]:
@@ -186,6 +277,22 @@ def main():
 
     spec_p = subparsers.add_parser("spec", help="Compile decision-table specs to pytest & run mutation audit")
     spec_p.add_argument("--file", type=str, help="Specific spec JSON file")
+
+    subparsers.add_parser("budget", help="Display real-time Budget Awareness Panel")
+    subparsers.add_parser("evidence", help="List all nodes in Typed Evidence Graph")
+
+    race_p = subparsers.add_parser("race", help="Race parallel peer hypotheses against a spec (Improvement #3)")
+    race_p.add_argument("--spec", type=str, default=".teamzero/memory/specs/refund_spec.json", help="Spec file to race against")
+    race_p.add_argument("--peers", type=int, default=3, help="Number of peer hypotheses to race (default: 3)")
+
+    synth_p = subparsers.add_parser("synthesize", help="Synthesize task learnings into an ADR & Living Map (Improvement #6)")
+    synth_p.add_argument("--task", type=str, required=True, help="Task ID to synthesize (e.g. TASK-REFUND-CLEAN-001)")
+
+    canary_p = subparsers.add_parser("canary", help="View canary security event lineage (Improvement #8)")
+    canary_p.add_argument("--list", action="store_true", help="List all past canary breach events")
+
+    ratchet_p = subparsers.add_parser("ratchet", help="Audit and self-heal ratchet checks (Improvement #10)")
+    ratchet_p.add_argument("--health", action="store_true", help="Display ratchet health & proposed promotions")
 
     args = parser.parse_args()
 
@@ -225,6 +332,56 @@ def main():
         print(f"[OK] Compiled {c} decision table rules to {out_test}")
         audit = run_spec_mutation_audit(target_spec)
         print(f"[OK] Spec Mutation Audit: {len(audit)} rules verified.")
+    elif args.subcommand == "budget":
+        cmd_budget()
+    elif args.subcommand == "evidence":
+        cmd_evidence()
+    elif args.subcommand == "race":
+        from teamzero.racing import race_peer_hypotheses
+        spec_path = Path(args.spec)
+        res = race_peer_hypotheses(spec_path, num_peers=args.peers)
+        print("\n" + "=" * 65)
+        print(f" Hypothesis Racing Results (Spec: {res['spec_id']})")
+        print("=" * 65)
+        for idx, p in enumerate(res["leaderboard"], 1):
+            star = "[WINNER]" if idx == 1 else "        "
+            print(f" #{idx} {star} {p['name']:<25} | Score: {p['score']:>5.1f}/100")
+        print("=" * 65)
+    elif args.subcommand == "synthesize":
+        from teamzero.synthesize import synthesize_task_learnings
+        res = synthesize_task_learnings(args.task)
+        print(f"[OK] Generated Synthesis ADR: {res['adr_file']}")
+        if res["map_updated"]:
+            print(f"[OK] Updated Living Map Card for {args.task}")
+    elif args.subcommand == "canary":
+        from teamzero.canary_lineage import list_canary_events
+        events = list_canary_events()
+        print("=" * 65)
+        print(f" Canary Security Lineage Events ({len(events)} logged)")
+        print("=" * 65)
+        if not events:
+            print(" [i] Clean: No canary breaches recorded in organizational history.")
+        else:
+            for ev in events:
+                print(f" [!] {ev['event_id']} ({ev['timestamp']})")
+                print(f"     Canary:    {ev['canary_id']}")
+                print(f"     Task:      {ev['task_id']}")
+                print(f"     File:      {ev['leaked_file']}")
+        print("=" * 65)
+    elif args.subcommand == "ratchet":
+        from teamzero.ratchet import audit_ratchet_health
+        health = audit_ratchet_health()
+        print("=" * 65)
+        print(" TeamZero Ratchet Health & Self-Healing Report")
+        print("=" * 65)
+        print(f" Total Registered Checks: {health['total_checks']}")
+        print(f" Active Checks:           {health['active_count']}")
+        print(f" Stale Checks:            {health['stale_count']}")
+        if health["proposed_promotions"]:
+            print(f"\n Auto-Proposed Promotions from Evidence Graph ({len(health['proposed_promotions'])}):")
+            for prop in health["proposed_promotions"]:
+                print(f"  + [{prop['id']}] {prop['description']}")
+        print("=" * 65)
     else:
         parser.print_help()
 

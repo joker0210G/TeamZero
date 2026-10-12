@@ -43,9 +43,11 @@ from teamzero.config import (
 from teamzero.governance import (
     sign_receipt,
     update_trust_score,
+    compute_evidence_weighted_trust_delta,
     record_payroll,
     load_constitution
 )
+from teamzero.evidence import EvidenceGraph
 
 # ── Configuration Constants ──────────────────────────────────────────────────
 PROBE_TIMEOUT_S = 5
@@ -557,13 +559,19 @@ def run_l1_breaker(candidate: dict, offline: bool = False) -> Dict[str, Any]:
     else:
         verdict = "PASS"
 
-    # Governance & Trust Updates
+    # Governance & Trust Updates ( Evidence-Weighted Trust Decay)
+    ev_graph_lookup = EvidenceGraph()
     if verdict == "PASS":
         update_trust_score(author_agent, delta=+2, reason=f"Breaker PASS on {sha[:8]}")
-    elif verdict == "NEEDS_REPAIR":
-        update_trust_score(author_agent, delta=-5, reason=f"Breaker caught defects on {sha[:8]}")
     else:
-        update_trust_score(author_agent, delta=-10, reason=f"Max repairs exceeded on {sha[:8]}")
+        findings_dicts = [asdict(f) for f in all_findings]
+        delta, reason_str = compute_evidence_weighted_trust_delta(findings_dicts, ev_graph_lookup)
+        if verdict == "ESCALATE_FOUNDER":
+            delta -= 5  # Additional penalty for exhausting repair attempts
+            reason_str += f" [Max repairs exceeded on {sha[:8]}]"
+        else:
+            reason_str += f" [Breaker caught defects on {sha[:8]}]"
+        update_trust_score(author_agent, delta=delta, reason=reason_str)
 
     record_payroll(task_id, author_agent, tokens_used, cost_usd=tokens_used * 0.000001)
     receipt_data = sign_receipt(f"{task_id}:{sha}", "breaker_run")
@@ -590,6 +598,23 @@ def run_l1_breaker(candidate: dict, offline: bool = False) -> Dict[str, Any]:
     out_file = FINDINGS_DIR / f"{task_id}_{sha[:8]}.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(findings_packet, f, indent=2)
+
+    # Record into Typed Evidence Graph 
+    ev_graph = EvidenceGraph()
+    task_gen = candidate.get("generation", 1)
+    if all_findings:
+        for f in all_findings:
+            ev_graph.record_finding(
+                task_id=task_id,
+                commit_sha=sha,
+                generation=task_gen,
+                finding_dict=asdict(f),
+                cost_tokens=tokens_used
+            )
+    elif verdict == "PASS":
+        # Candidate is clean on this task - mark past open nodes for this task as resolved
+        for node in ev_graph.list_nodes(task_id=task_id, status="OPEN"):
+            ev_graph.mark_resolved(node.node_id, resolved_by_commit=sha)
 
     # Escalate if needed
     if verdict == "ESCALATE_FOUNDER":

@@ -28,6 +28,7 @@ from teamzero.config import (
     SERVER_SECRET
 )
 from teamzero.governance import sign_receipt, verify_receipt, load_constitution
+from teamzero.evidence import EvidenceGraph
 
 
 def get_git_commit_sha(target_ref: str = "HEAD") -> str:
@@ -107,6 +108,13 @@ def evaluate_merge_prerequisites(
     needs_founder_approval = required_autonomy_level < 5
     has_founder_approval = len(approval_receipts) > 0
 
+    # Evidence Graph safety gate 
+    ev_graph = EvidenceGraph()
+    # Find matching task_id for this commit from findings packet or ledger
+    task_id = findings_packet.get("task_id") if isinstance(findings_packet, dict) else None
+    unresolved_ev = ev_graph.get_unresolved_critical_or_high(task_id=task_id) if task_id else []
+    evidence_gate_passed = len(unresolved_ev) == 0
+
     gates_status = {
         "commit_sha": sha,
         "deterministic_gauntlet": {
@@ -118,6 +126,11 @@ def evaluate_merge_prerequisites(
             "receipt": breaker_receipts[-1]["receipt"] if breaker_receipts else None,
             "detail": breaker_msg
         },
+        "evidence_graph": {
+            "passed": evidence_gate_passed,
+            "unresolved_critical_high": len(unresolved_ev),
+            "detail": f"{len(unresolved_ev)} open critical/high evidence nodes" if unresolved_ev else "Clean"
+        },
         "founder_approval": {
             "required": needs_founder_approval,
             "granted": has_founder_approval,
@@ -128,6 +141,7 @@ def evaluate_merge_prerequisites(
     all_satisfied = (
         gates_status["deterministic_gauntlet"]["passed"]
         and gates_status["redteam_breaker"]["passed"]
+        and gates_status["evidence_graph"]["passed"]
         and (not needs_founder_approval or has_founder_approval)
     )
 

@@ -79,6 +79,46 @@ def scan_for_poison(content: str) -> List[str]:
     return hits
 
 
+def compute_evidence_weighted_trust_delta(
+    findings: List[Dict[str, Any]],
+    ev_graph: Any = None
+) -> Tuple[int, str]:
+    """Computes evidence-weighted trust decay .
+    Agents repeating known bugs recorded in the Evidence Graph receive double penalties.
+    """
+    if not findings:
+        return +2, "Clean Breaker verification pass"
+
+    base_penalties = {
+        "CRITICAL": -5,
+        "HIGH": -3,
+        "MEDIUM": -1,
+        "LOW": 0
+    }
+
+    total_delta = 0
+    known_recurrences = 0
+
+    for f in findings:
+        sev = f.get("severity", "MEDIUM").upper()
+        base = base_penalties.get(sev, -1)
+        evidence_text = f.get("evidence", "") or f.get("title", "")
+        
+        is_known = False
+        if ev_graph and hasattr(ev_graph, "has_similar_finding"):
+            is_known = ev_graph.has_similar_finding(evidence_text)
+
+        multiplier = 2 if is_known else 1
+        if is_known:
+            known_recurrences += 1
+        total_delta += base * multiplier
+
+    reason = f"Defects caught: delta {total_delta}"
+    if known_recurrences > 0:
+        reason += f" ({known_recurrences} known defect recurrence 2x penalties applied)"
+    return total_delta, reason
+
+
 def update_trust_score(agent_id: str, delta: int, reason: str):
     """Adjusts trust score and autonomy level for an internal or external agent."""
     TRUST_LEDGER.parent.mkdir(parents=True, exist_ok=True)

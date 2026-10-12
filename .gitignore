@@ -22,3 +22,9 @@ last_turn.txt
 glm_output.md
 teamzero_chat_raw.json
 dump_teamzero_chat.py
+
+# Local Runtime Agent Memory & Artifacts
+.teamzero/memory/evidence/
+.teamzero/memory/tasks/
+.teamzero/redteam/canary_events.jsonl
+.teamzero/redteam/ratchet_registry.json

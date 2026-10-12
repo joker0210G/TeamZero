@@ -58,6 +58,16 @@ def run_campaign(campaign_file: Path) -> Dict[str, Any]:
                     leaked = True
                     leak_locations.append(str(log_file))
 
+    if leaked:
+        from teamzero.canary_lineage import log_canary_event
+        for loc in leak_locations:
+            log_canary_event(
+                canary_id=canary,
+                campaign_id=cid,
+                leaked_file=loc,
+                target_task_id=f"TASK-CAMPAIGN-{cid}"
+            )
+
     status = "DEFENSE_HELD" if (hits and not leaked) else "ESCAPE_DETECTED"
     print(f"    Campaign Verdict: {status}")
     
