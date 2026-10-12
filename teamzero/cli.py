@@ -307,13 +307,13 @@ def main(argv=None):
     subparsers.add_parser("wargame", help="Run L2/L3 war game scenarios")
 
     spec_p = subparsers.add_parser("spec", help="Compile decision-table specs to pytest & run mutation audit")
-    spec_p.add_argument("--file", type=str, help="Specific spec JSON file")
+    spec_p.add_argument("--file", type=str, help="Specific spec JSON file (if omitted, auto-discovers in .teamzero/memory/specs/)")
 
     subparsers.add_parser("budget", help="Display real-time Budget Awareness Panel")
     subparsers.add_parser("evidence", help="List all nodes in Typed Evidence Graph")
 
     race_p = subparsers.add_parser("race", help="Race parallel peer hypotheses against a spec")
-    race_p.add_argument("--spec", type=str, default=".teamzero/memory/specs/refund_spec.json", help="Spec file to race against")
+    race_p.add_argument("--spec", type=str, help="Spec file to race against (auto-discovers if omitted)")
     race_p.add_argument("--peers", type=int, default=3, help="Number of peer hypotheses to race (default: 3)")
 
     synth_p = subparsers.add_parser("synthesize", help="Synthesize task learnings into an ADR & Living Map")
@@ -344,16 +344,18 @@ def main(argv=None):
     debug_p.add_argument("seq", type=int, help="Sequence number to rewind to")
 
     mutate_p = subparsers.add_parser("mutate", help="Run AI Red-Team adversarial spec mutation test")
-    mutate_p.add_argument("--spec", type=str, default=".teamzero/memory/specs/refund_spec.json", help="Spec file to stress-test")
+    mutate_p.add_argument("--spec", type=str, help="Spec file to stress-test (auto-discovers if omitted)")
 
     subparsers.add_parser("health", help="Display Living SLA Dashboard and health report")
 
     dep_p = subparsers.add_parser("dep-scan", help="Run XZ-grade supply chain & dependency security audit")
     dep_p.add_argument("--strict", action="store_true", help="Exit with non-zero code on any finding")
 
-    rev_p = subparsers.add_parser("review", help="Generate line-indexed PR review feedback draft")
-    rev_p.add_argument("branch", type=str, help="Branch to review")
-    rev_p.add_argument("--base", type=str, default="main", help="Base branch (default: main)")
+    ideate_p = subparsers.add_parser("ideate", help="Design Thinking ideation terminal & spec compilation wizard")
+    ideate_p.add_argument("--from-file", type=str, help="Import and validate an existing Design Thinking Ask markdown file")
+    ideate_p.add_argument("--compile", type=str, help="Compile an Ask markdown directly to a decision-table spec JSON")
+    ideate_p.add_argument("--title", type=str, help="Title for the ideation brief")
+    ideate_p.add_argument("--author", type=str, default="Founder", help="Author of the ideation brief (default: Founder)")
 
     args = parser.parse_args()
 
@@ -391,8 +393,17 @@ def main(argv=None):
         subprocess.run([sys.executable, str(wg_script), "--all"], cwd=str(ROOT_DIR))
     elif args.subcommand == "spec":
         from teamzero.spec_compiler import compile_decision_table_to_pytest, run_spec_mutation_audit
-        target_spec = Path(args.file) if args.file else (SPECS_DIR / "refund_spec.json")
-        out_test = ROOT_DIR / "tests" / "test_refund_generated.py"
+        if args.file:
+            target_spec = Path(args.file)
+        else:
+            all_specs = sorted(list(SPECS_DIR.glob("*.json"))) if SPECS_DIR.exists() else []
+            if not all_specs:
+                print(f"[!] No spec found in {SPECS_DIR}. Create one with 'tz ideate' or pass --file <path>.")
+                sys.exit(1)
+            target_spec = all_specs[0]
+            print(f"[i] Auto-selected spec: {target_spec.name}")
+
+        out_test = ROOT_DIR / "tests" / f"test_{target_spec.stem}_generated.py"
         c = compile_decision_table_to_pytest(target_spec, out_test)
         print(f"[OK] Compiled {c} decision table rules to {out_test}")
         audit = run_spec_mutation_audit(target_spec)
@@ -403,7 +414,16 @@ def main(argv=None):
         cmd_evidence()
     elif args.subcommand == "race":
         from teamzero.racing import race_peer_hypotheses
-        spec_path = Path(args.spec)
+        if args.spec:
+            spec_path = Path(args.spec)
+        else:
+            all_specs = sorted(list(SPECS_DIR.glob("*.json"))) if SPECS_DIR.exists() else []
+            if not all_specs:
+                print(f"[!] No spec found in {SPECS_DIR}. Create one with 'tz ideate' or pass --spec <path>.")
+                sys.exit(1)
+            spec_path = all_specs[0]
+            print(f"[i] Auto-selected spec: {spec_path.name}")
+
         res = race_peer_hypotheses(spec_path, num_peers=args.peers)
         print("\n" + "=" * 65)
         print(f" Hypothesis Racing Results (Spec: {res['spec_id']})")
@@ -526,17 +546,29 @@ def main(argv=None):
     elif args.subcommand == "mutate":
         from teamzero.mutation import RedTeamMutationEngine
         engine = RedTeamMutationEngine()
-        spec_path = Path(args.spec)
-        target_service = ROOT_DIR / "teamzero" / "refund_service.py"
+        if args.spec:
+            spec_path = Path(args.spec)
+        else:
+            all_specs = sorted(list(SPECS_DIR.glob("*.json"))) if SPECS_DIR.exists() else []
+            if not all_specs:
+                print(f"[!] No spec found in {SPECS_DIR}. Create one with 'tz ideate' or pass --spec <path>.")
+                sys.exit(1)
+            spec_path = all_specs[0]
+            print(f"[i] Auto-selected spec: {spec_path.name}")
+
+        spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
+        mod_name = spec_data.get("module", "")
+        # Resolve module path: e.g. teamzero.refund_service -> ROOT_DIR / teamzero / refund_service.py
+        target_service = ROOT_DIR / (mod_name.replace(".", "/") + ".py") if mod_name else (ROOT_DIR / "teamzero" / "refund_service.py")
         base_code = target_service.read_text(encoding="utf-8") if target_service.exists() else ""
         mutants = engine.generate_adversarial_mutants(base_code)
         
-        spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
         res = engine.evaluate_spec_resilience(mutants, lambda code: "float(amount)" not in code and "int(amount)" in code)
         print("=" * 65)
         print(f" AI Red-Team Adversarial Spec Mutation Test")
         print("=" * 65)
         print(f" Target Spec:             {spec_path.name}")
+        print(f" Target Service:          {target_service.name if target_service.exists() else 'N/A'}")
         print(f" Total Adversarial Mutants: {res.total_mutants}")
         print(f" Mutants Killed (Caught): {res.mutants_killed}")
         print(f" Mutants Survived:        {res.mutants_survived}")
@@ -569,7 +601,7 @@ def main(argv=None):
     elif args.subcommand == "dep-scan":
         from teamzero.supply_chain import SupplyChainScanner
         scanner = SupplyChainScanner(ROOT_DIR)
-        risks = scanner.run_full_scan(dependencies=["requests", "pytset", "fastapi"])
+        risks = scanner.run_full_scan()
         print("=" * 65)
         print(" TeamZero XZ-Grade Supply Chain & Dependency Audit")
         print("=" * 65)
@@ -603,6 +635,126 @@ def main(argv=None):
         print(f" Review File: {out_path}")
         print(" Ready to inspect or submit to GitHub PR via gh CLI.")
         print("=" * 65)
+    elif args.subcommand == "ideate":
+        from teamzero.ideation import (
+            DesignThinkingBrief,
+            EmpathizePhase,
+            DefinePhase,
+            IdeatePhase,
+            PrototypePhase,
+            IdeationTestRule,
+            parse_ideation_markdown,
+            save_brief_to_inbox,
+            compile_brief_to_spec,
+        )
+
+        if args.compile:
+            src = Path(args.compile)
+            if not src.exists():
+                print(f"[!] Error: Ask file '{src}' does not exist.")
+                sys.exit(1)
+            brief = parse_ideation_markdown(src.read_text(encoding="utf-8"))
+            out_spec = compile_brief_to_spec(brief)
+            print("=" * 65)
+            print(" TeamZero Design Thinking Spec Compiler")
+            print("=" * 65)
+            print(f" [OK] Compiled Ask '{brief.title}' into executable spec:")
+            print(f"      Spec Path:   {out_spec}")
+            print(f"      Module:      {brief.prototype.target_module or 'teamzero.<feature>'}")
+            print(f"      Invariants:  {len(brief.define.invariants)} business rules locked")
+            print(f"      Test Rules:  {len(brief.test_rules)} decision-table rows compiled")
+            print(" Next: Run 'python -m teamzero.cli spec --file " + str(out_spec) + "'")
+            print("=" * 65)
+        elif args.from_file:
+            src = Path(args.from_file)
+            if not src.exists():
+                print(f"[!] Error: File '{src}' does not exist.")
+                sys.exit(1)
+            brief = parse_ideation_markdown(src.read_text(encoding="utf-8"))
+            saved = save_brief_to_inbox(brief)
+            print("=" * 65)
+            print(" TeamZero Design Thinking Intake Terminal")
+            print("=" * 65)
+            print(f" [OK] Ingested Design Thinking brief '{brief.title}'")
+            print(f"      Saved to Inbox: {saved}")
+            print(f"      Target Persona: {brief.empathize.target_persona or 'N/A'}")
+            print(f"      Invariants:     {len(brief.define.invariants)} invariant(s)")
+            print(f"      Test Rules:     {len(brief.test_rules)} decision-table condition(s)")
+            print("=" * 65)
+        else:
+            # Interactive terminal wizard
+            print("=" * 65)
+            print(" TeamZero Founder Ideation Wizard (Design Thinking Framework)")
+            print("=" * 65)
+            title = args.title or input(" [?] Feature / Concept Title: ").strip() or "Untitled Feature"
+            print("\n -- Stage 1: EMPATHIZE (Understand User & Pain Point) --")
+            persona = input(" [?] Target Persona (Who has the problem?): ").strip()
+            friction = input(" [?] Observed Friction (What is broken/hard?): ").strip()
+            quote = input(" [?] User Quote / Verbatim expression: ").strip()
+            need = input(" [?] Emotional Need (What relief/confidence is needed?): ").strip()
+
+            print("\n -- Stage 2: DEFINE (Problem Statement & Invariants) --")
+            pov = input(" [?] POV Statement ([User] needs [Action] because [Insight]): ").strip()
+            print(" [i] Enter non-negotiable business invariants (one per line, blank line to finish):")
+            invariants = []
+            while True:
+                inv = input("     Invariant > ").strip()
+                if not inv:
+                    break
+                invariants.append(inv)
+
+            print("\n -- Stage 3: IDEATE (Divergent Hypotheses to Race) --")
+            print(" [i] Enter competing implementation hypotheses (blank line to finish):")
+            hypotheses = []
+            hypo_idx = 1
+            while True:
+                h = input(f"     Option {chr(64 + hypo_idx)} > ").strip()
+                if not h:
+                    break
+                hypotheses.append({"name": chr(64 + hypo_idx), "desc": h})
+                hypo_idx += 1
+
+            print("\n -- Stage 4: PROTOTYPE (Minimal Target Surface) --")
+            mod = input(" [?] Target Module (e.g. teamzero.checkout): ").strip()
+            fn = input(" [?] Target Function Signature (e.g. run_checkout): ").strip()
+
+            print("\n -- Stage 5: TEST (Decision Table Matrix) --")
+            print(" [i] Add decision table rule (Rule ID, Condition, Expected Result):")
+            rules = []
+            while True:
+                r_cond = input("     Condition (blank to finish, e.g. amount <= 0) > ").strip()
+                if not r_cond:
+                    break
+                r_out = input("     Expected Outcome (e.g. ERROR_INVALID_AMOUNT) > ").strip()
+                rid = f"RULE_{len(rules) + 1:02d}"
+                rules.append(IdeationTestRule(rule_id=rid, condition=r_cond, expected_outcome=r_out))
+
+            brief = DesignThinkingBrief(
+                title=title,
+                author=args.author,
+                empathize=EmpathizePhase(
+                    target_persona=persona,
+                    observed_friction=friction,
+                    user_quote=quote,
+                    emotional_need=need,
+                ),
+                define=DefinePhase(
+                    pov_statement=pov,
+                    invariants=invariants,
+                ),
+                ideate=IdeatePhase(hypotheses=hypotheses),
+                prototype=PrototypePhase(target_module=mod, target_function=fn),
+                test_rules=rules,
+            )
+
+            saved = save_brief_to_inbox(brief)
+            out_spec = compile_brief_to_spec(brief)
+            print("\n" + "=" * 65)
+            print(f" [SUCCESS] Ideation Brief Sealed!")
+            print(f"   Inbox File: {saved}")
+            print(f"   Compiled Spec: {out_spec}")
+            print(f"   Next Step: Run 'python -m teamzero.cli race --spec {out_spec}'")
+            print("=" * 65)
     else:
         parser.print_help()
 

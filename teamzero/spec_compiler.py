@@ -20,10 +20,18 @@ from teamzero.config import SPECS_DIR
 
 
 def compile_decision_table_to_pytest(spec_path: Path, output_test_file: Path) -> int:
-    """Compiles a decision-table spec into a parameterized pytest file."""
+    """Compiles a decision-table spec into a parameterized pytest file.
+    
+    Dynamically inspects `module` and `function` targets in the spec JSON.
+    If not specified, alerts that a target module/function is required.
+    """
     spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
-    module_name = spec_data.get("module", "teamzero.refund_service")
-    fn_name = spec_data.get("function", "calculate_refund")
+    module_name = spec_data.get("module")
+    fn_name = spec_data.get("function")
+
+    if not module_name or not fn_name:
+        raise ValueError(f"Spec {spec_path.name} must specify 'module' and 'function' target strings.")
+
     rules = spec_data.get("decision_table", [])
 
     test_lines = [

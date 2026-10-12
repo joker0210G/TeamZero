@@ -8,6 +8,7 @@ Inspired by the XZ Utils Backdoor (CVE-2024-3094):
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -129,13 +130,43 @@ class SupplyChainScanner:
 
         return risks
 
+    def extract_declared_dependencies(self) -> List[str]:
+        """Extracts declared dependencies from pyproject.toml, requirements.txt, or package.json."""
+        deps: List[str] = []
+        req_file = self.root_dir / "requirements.txt"
+        if req_file.exists():
+            for line in req_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    pkg = re.split(r"[=><~]", line)[0].strip()
+                    if pkg:
+                        deps.append(pkg)
+
+        pyproj = self.root_dir / "pyproject.toml"
+        if pyproj.exists():
+            content = pyproj.read_text(encoding="utf-8")
+            matches = re.findall(r'["\']([a-zA-Z0-9_\-]+)(?:[=><~].*)?["\']', content)
+            deps.extend(matches)
+
+        pkg_json = self.root_dir / "package.json"
+        if pkg_json.exists():
+            try:
+                data = json.loads(pkg_json.read_text(encoding="utf-8"))
+                deps.extend(list(data.get("dependencies", {}).keys()))
+                deps.extend(list(data.get("devDependencies", {}).keys()))
+            except Exception:
+                pass
+
+        return list(dict.fromkeys(deps))
+
     def run_full_scan(self, dependencies: Optional[List[str]] = None) -> List[SupplyChainRisk]:
         """Runs all supply-chain inspection vectors."""
         risks: List[SupplyChainRisk] = []
         risks.extend(self.scan_hidden_test_payloads())
         risks.extend(self.scan_build_hooks())
-        if dependencies:
-            risks.extend(self.check_typosquatting(dependencies))
+        target_deps = dependencies if dependencies is not None else self.extract_declared_dependencies()
+        if target_deps:
+            risks.extend(self.check_typosquatting(target_deps))
         return risks
 
 

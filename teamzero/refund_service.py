@@ -1,5 +1,7 @@
-"""Refund calculation service for TeamZero.
-Implements SPEC-REFUND-001 adhering to Quality Constitution invariants.
+"""[REFERENCE EXAMPLE / TEMPLATE FIXTURE]
+Sample domain service demonstrating TeamZero invariants (SPEC-REFUND-001).
+This file serves as a reference implementation for integration testing, demonstrations,
+and educational walkthroughs. Real projects should define their own services.
 """
 
 from typing import Dict, Any

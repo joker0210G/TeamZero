@@ -21,7 +21,12 @@ from typing import Any, Dict, List
 from teamzero.evaluator import evaluate_task_criteria
 
 
-STRATEGIES = [
+# ---------------------------------------------------------------------------
+# DEMO REFERENCE CANDIDATES:
+# When agents invoke `tz race`, real agents formulate independent branch diffs.
+# The strategies below serve as an offline mock/demo test harness.
+# ---------------------------------------------------------------------------
+DEMO_REFERENCE_STRATEGIES = [
     {
         "id": "peer_naive",
         "name": "Peer A (Straightforward)",
@@ -80,12 +85,13 @@ def calculate_refund(amount_paid, days_since_purchase, item_condition):
 def race_peer_hypotheses(spec_path: Path, num_peers: int = 3) -> Dict[str, Any]:
     """Runs parallel peer hypotheses against the spec and determines the winner."""
     spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
-    selected_peers = STRATEGIES[:num_peers]
+    selected_peers = DEMO_REFERENCE_STRATEGIES[:num_peers]
 
     results = []
     print(f"[*] Racing {len(selected_peers)} Research Peers against {spec_path.name}...")
 
-    target_service_file = Path("teamzero/refund_service.py")
+    mod_name = spec_data.get("module", "")
+    target_service_file = Path(mod_name.replace(".", "/") + ".py") if mod_name else Path("teamzero/refund_service.py")
     orig_code = target_service_file.read_text(encoding="utf-8") if target_service_file.exists() else ""
 
     try:

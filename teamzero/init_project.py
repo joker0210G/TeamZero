@@ -373,6 +373,11 @@ def cmd_init(args) -> int:
         f.write(json.dumps(receipt) + "\n")
     with (org_dir / "ledger" / "trust.jsonl").open("a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": ts, "agent": "founder", "event": "genesis", "trust": 1.0}) + "\n")
+
+    # 4b. Seed Design Thinking Ask template into inbox
+    tmpl_src = Path(__file__).parent / "templates" / "ask_design_thinking.md"
+    if tmpl_src.exists():
+        shutil.copyfile(str(tmpl_src), str(org_dir / "inbox" / "asks" / "TEMPLATE_DESIGN_THINKING.md"))
     with (org_dir / "ledger" / "payroll.jsonl").open("a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": ts, "event": "genesis", "tokens": 0, "cost_usd": 0.0}) + "\n")
 
