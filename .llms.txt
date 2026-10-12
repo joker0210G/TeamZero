@@ -14,6 +14,7 @@
 - **canary_lineage** (`canary_lineage.py`): TeamZero Canary Lineage Tracker (Improvement #8).
 - **cli** (`cli.py`): TeamZero Unified CLI (`tz`).
 - **config** (`config.py`): System module
+- **cove** (`cove.py`): Chain-of-Verification (CoVe) & Multi-Path Reasoning Engine for TeamZero.
 - **debugger** (`debugger.py`): Time-Travel Debugger for TeamZero.
 - **diversity** (`diversity.py`): Solution Diversity Guard (Quality-Diversity Exploration).
 - **evaluator** (`evaluator.py`): TeamZero Task Evaluator Engine ( Task-Owned Evaluators).

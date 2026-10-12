@@ -380,6 +380,11 @@ def main(argv=None):
     ground_p.add_argument("target", type=str, help="Target query, file path, or brief")
     ground_p.add_argument("--top-k", type=int, default=5, help="Top-k tools to select (for mode=tools)")
 
+    cove_p = subparsers.add_parser("cove", help="Chain-of-Verification (CoVe) and Self-Consistency engine")
+    cove_p.add_argument("mode", choices=["verify", "plan", "consensus"], help="Verification mode")
+    cove_p.add_argument("target", type=str, help="Target claim, code file, or prompt")
+    cove_p.add_argument("--candidates", type=str, nargs="*", help="Candidate answers for self-consistency consensus")
+
     args = parser.parse_args()
 
     if args.subcommand == "init":
@@ -1084,6 +1089,47 @@ def main(argv=None):
                 print("\n Findings:")
                 for r in verdict.reasons:
                     print(f"   - {r}")
+            print("=" * 65)
+    elif args.subcommand == "cove":
+        from teamzero.cove import run_chain_of_verification, generate_verification_plan, compute_self_consistency
+        target_p = Path(args.target)
+        claim_or_code = target_p.read_text(encoding="utf-8", errors="replace") if target_p.exists() else args.target
+        if args.mode == "verify":
+            res = run_chain_of_verification(claim_or_code)
+            print("=" * 65)
+            print(" Chain-of-Verification (CoVe) Audit Report")
+            print("=" * 65)
+            print(f" Initial Baseline Claim:")
+            print(f"   {res.initial_baseline[:200]}")
+            print(f"\n Verification Fact-Check Questions ({len(res.verification_questions)}):")
+            for q in res.verification_questions:
+                print(f"   ? [{q.question_id}] {q.question}")
+                print(f"     Answer: {q.answer} (Verdict: {q.verdict})")
+            print(f"\n Contradictions Detected: {len(res.contradictions)}")
+            for c in res.contradictions:
+                print(f"   ! {c}")
+            print("-" * 65)
+            print(f" Rectified Final Output:")
+            print(f"   {res.rectified_output}")
+            print("=" * 65)
+        elif args.mode == "plan":
+            plan = generate_verification_plan(claim_or_code)
+            print("=" * 65)
+            print(f" Chain-of-Verification Plan ({len(plan)} Questions)")
+            print("=" * 65)
+            for q in plan:
+                print(f" [{q.question_id}] {q.question} (Target: {q.target_fact})")
+            print("=" * 65)
+        elif args.mode == "consensus":
+            candidates = args.candidates if args.candidates else [claim_or_code]
+            cons = compute_self_consistency(candidates)
+            print("=" * 65)
+            print(f" Self-Consistency Consensus Analysis ({len(candidates)} Candidates)")
+            print("=" * 65)
+            print(f" Consensus Answer:    {cons.consensus_answer}")
+            print(f" Agreement Ratio:    {cons.agreement_ratio * 100:.1f}%")
+            print(f" Unique Clusters:    {cons.unique_clusters}")
+            print(f" Candidate Pool:     {cons.candidates}")
             print("=" * 65)
     else:
         parser.print_help()

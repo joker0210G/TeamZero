@@ -72,6 +72,7 @@ STANDARD_TOOLS = CORE_TOOLS | {
     "teamzero_search_tools",
     "teamzero_verify_grounding",
     "teamzero_surface_assumptions",
+    "teamzero_cove_verify",
 }
 
 def _normalize_tool_name(name: str) -> str:
@@ -1048,6 +1049,48 @@ def teamzero_validate_candidate_multiagent(
         "critic_compliance": verdict.critic_compliance,
         "reasons": verdict.reasons
     }
+
+
+@mcp.tool()
+def teamzero_cove_verify(
+    candidate_code: str,
+    feature: str = "general",
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Runs the 4-step Chain-of-Verification (CoVe) pipeline on code: draft -> plan questions -> independent verification -> rectification."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.cove import run_chain_of_verification
+    return run_chain_of_verification(candidate_code, feature=feature)
+
+
+@mcp.tool()
+def teamzero_cove_plan(
+    candidate_code: str,
+    feature: str = "general",
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Generates the targeted fact-checking verification plan for a candidate solution without executing it."""
+    _authorize_client(client_id)
+    from dataclasses import asdict
+    from teamzero.cove import generate_verification_plan
+    plan = generate_verification_plan(candidate_code, feature=feature)
+    return {
+        "feature": feature,
+        "question_count": len(plan),
+        "questions": [asdict(q) for q in plan]
+    }
+
+
+@mcp.tool()
+def teamzero_self_consistency(
+    candidates: List[str],
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Computes consensus and structural agreement across multiple reasoning paths / candidate implementations."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.cove import compute_self_consistency
+    return compute_self_consistency(candidates)
+
 
 
 
