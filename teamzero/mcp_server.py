@@ -65,6 +65,8 @@ STANDARD_TOOLS = CORE_TOOLS | {
     "teamzero_check_merge",
     "teamzero_ask_founder",
     "teamzero_parse_prd",
+    "teamzero_get_living_wiki",
+    "teamzero_check_docs_drift",
 }
 
 def _normalize_tool_name(name: str) -> str:
@@ -879,6 +881,45 @@ def teamzero_fix_dependencies(client_id: str = "anon") -> Dict[str, Any]:
     from teamzero.tasks import TaskRegistry
     reg = TaskRegistry()
     return reg.fix_dependencies()
+
+
+@mcp.tool()
+def teamzero_build_wiki(client_id: str = "anon") -> Dict[str, Any]:
+    """Compiles AST symbol manifests, living architecture maps, .llms.txt, and wiki.json."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.wiki import build_living_wiki
+    return build_living_wiki()
+
+
+@mcp.tool()
+def teamzero_check_docs_drift(client_id: str = "anon") -> Dict[str, Any]:
+    """Docs-as-Code PR Gatekeeper: Checks if code changes have synchronized documentation updates."""
+    _authorize_client(client_id)
+    from teamzero.wiki import check_docs_drift
+    return check_docs_drift()
+
+
+@mcp.tool()
+def teamzero_prune_wiki(fix: bool = False, client_id: str = "anon") -> Dict[str, Any]:
+    """Treats docs like a Bonsai Tree: scans for broken hyperlinks and prunes stale module cards."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.wiki import prune_and_validate_wiki
+    return prune_and_validate_wiki(fix=fix)
+
+
+@mcp.tool()
+def teamzero_get_living_wiki(client_id: str = "anon") -> str:
+    """Returns the curated .llms.txt living codebase index inside an instruction-isolated DATA envelope."""
+    _authorize_client(client_id)
+    from teamzero.config import LLMS_TXT_FILE
+    if LLMS_TXT_FILE.exists():
+        return envelope(LLMS_TXT_FILE.read_text(encoding="utf-8"))
+    from teamzero.wiki import build_living_wiki
+    build_living_wiki()
+    if LLMS_TXT_FILE.exists():
+        return envelope(LLMS_TXT_FILE.read_text(encoding="utf-8"))
+    return envelope("# Living Wiki (.llms.txt) not found")
+
 
 
 

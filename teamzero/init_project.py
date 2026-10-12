@@ -111,7 +111,7 @@ LEAF_DIRS = [
     "memory/adr", "memory/map", "memory/specs", "memory/traps",
     "redteam/campaigns", "redteam/findings",
     "inbox/asks", "inbox/decisions",
-    "ledger", "journal", "triggers",
+    "ledger", "journal", "triggers", "runbooks",
 ]
 
 CONSTITUTION_TEMPLATE = """\
@@ -396,6 +396,13 @@ def cmd_init(args) -> int:
         shutil.copyfile(str(tmpl_src), str(org_dir / "inbox" / "asks" / "TEMPLATE_DESIGN_THINKING.md"))
     with (org_dir / "ledger" / "payroll.jsonl").open("a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": ts, "event": "genesis", "tokens": 0, "cost_usd": 0.0}) + "\n")
+
+    # 4c. Bootstrap Living Code Wiki, .llms.txt, and Runbooks
+    from teamzero.wiki import build_living_wiki
+    try:
+        build_living_wiki(root)
+    except Exception:
+        pass
 
     # 5. Gitignore + MCP client configs
     mcp_cmd = getattr(args, "mcp_cmd", sys.executable)

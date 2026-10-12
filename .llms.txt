@@ -1,0 +1,57 @@
+# TeamZero Codebase Context & Living Index
+> Flat-file living architecture index for autonomous agents and solo founders.
+> Designed for rapid LLM onboarding without whole-repo context ingestion.
+
+## Core Invariants
+1. **INV-01 (Generator Never Verifies)**: Author agent and reviewer/QA execute on distinct prompts/models.
+2. **INV-02 (QA Sees The Spec, Never The Diff)**: Verification authored against specs, preventing confirmation bias.
+3. **INV-03 (Done Is Computed, Never Asserted)**: Status is validated by automated merge gauntlets and HMAC receipts.
+4. **INV-04 (Zero Secrets & Protected Constitution)**: Sandboxes hold no keys; constitution cannot be agent-modified.
+5. **INV-05 (Failure Has A Price)**: Breaker catches deduct token budgets and decay agent trust scores.
+
+## Architecture & Submodules
+- **canary_lineage** (`canary_lineage.py`): TeamZero Canary Lineage Tracker (Improvement #8).
+- **cli** (`cli.py`): TeamZero Unified CLI (`tz`).
+- **config** (`config.py`): System module
+- **debugger** (`debugger.py`): Time-Travel Debugger for TeamZero.
+- **diversity** (`diversity.py`): Solution Diversity Guard (Quality-Diversity Exploration).
+- **evaluator** (`evaluator.py`): TeamZero Task Evaluator Engine ( Task-Owned Evaluators).
+- **evidence** (`evidence.py`): TeamZero Typed Evidence Graph Engine.
+- **generation** (`generation.py`): TeamZero Generational Task Loop Engine (Generational Research Loops).
+- **governance** (`governance.py`): Governance, cryptographic receipts, and trust scoring engine for TeamZero.
+- **health** (`health.py`): Living SLA Dashboard & Health Engine for TeamZero.
+- **ideation** (`ideation.py`): Design Thinking Ideation Engine for TeamZero.
+- **inbox_triage** (`inbox_triage.py`): Interactive Founder Asks Inbox & Decision Triage Terminal.
+- **init_project** (`init_project.py`): TeamZero CLI & Bootstrapping Engine.
+- **journal** (`journal.py`): Event Journal (Replay & Recovery) for TeamZero.
+- **mcp_server** (`mcp_server.py`): TeamZero MCP Server.
+- **merge_gate** (`merge_gate.py`): TeamZero Merge Gate Authority.
+- **model_router** (`model_router.py`): Multi-Provider Model Router for TeamZero.
+- **mutation** (`mutation.py`): AI Red-Team Adversarial Spec Mutation Tester.
+- **pareto** (`pareto.py`): Pareto Scoreboard and Multi-Objective Trade-Off Evaluation.
+- **peer_review** (`peer_review.py`): Peer Review Bot for TeamZero.
+- **racing** (`racing.py`): TeamZero Hypothesis Racing Engine ( Parallel Research Peers).
+- **ratchet** (`ratchet.py`): TeamZero Self-Healing Ratchet Engine (Improvement #10).
+- **refund_service** (`refund_service.py`): [REFERENCE EXAMPLE / TEMPLATE FIXTURE]
+- **spec_compiler** (`spec_compiler.py`): Spec-to-Test Compiler & Spec Mutation Testing Engine.
+- **supply_chain** (`supply_chain.py`): Advanced Supply-Chain Defense Scanner for TeamZero.
+- **synthesize** (`synthesize.py`): TeamZero ADR Auto-Synthesis Engine .
+- **tasks** (`tasks.py`): Hierarchical Task Decomposition & Dependency Engine for TeamZero.
+- **triggers** (`triggers.py`): Adaptive Catch-Up Trigger Engine for TeamZero.
+- **wiki** (`wiki.py`): Living Code Wiki & Docs-as-Code Engine for TeamZero.
+
+## Architecture Decision Records (The "Why")
+- [ADR-000: Institution Inception — The Autonomous AI Software Organization](.teamzero/memory/adr/ADR-000-institution-inception.md)
+- [ADR-001: Verification Over Trust (The Anti-Slop Core)](.teamzero/memory/adr/ADR-001-verification-over-trust.md)
+- [ADR-002: Living Codebase Map & Forensics Architecture](.teamzero/memory/adr/ADR-002-living-map-architecture.md)
+- [ADR-003: Model Context Protocol (MCP) — The Lobby vs. Vault Security Boundary](.teamzero/memory/adr/ADR-003-mcp-lobby-vault-boundary.md)
+
+## Developer & Agent Runbooks
+- [Onboarding Runbook](.teamzero/runbooks/onboarding.md)
+- [Disaster Recovery](.teamzero/runbooks/disaster_recovery.md)
+- [PR Review Playbook](.teamzero/runbooks/pr_review_playbook.md)
+
+## Navigation Guidelines
+- Query memory via Model Context Protocol: `teamzero_query_memory` or `teamzero_get_spec`.
+- Inspect living map cards under `.teamzero/memory/map/{module}.md` before modifying submodules.
+- Execute the merge gauntlet via `teamzero_run_gauntlet` before submitting candidate commits.

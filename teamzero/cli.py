@@ -364,6 +364,10 @@ def main(argv=None):
     task_p.add_argument("--status", type=str, help="New status for task (TODO, IN_PROGRESS, GAUNTLET_PASS, VERIFIED)")
     task_p.add_argument("--subtasks", type=str, help="Comma-separated list of subtask titles to expand into")
 
+    docs_p = subparsers.add_parser("docs", help="Living Code Wiki & Docs-as-Code engine")
+    docs_p.add_argument("action", nargs="?", default="status", choices=["build", "check", "bonsai", "status"], help="Documentation action to perform")
+    docs_p.add_argument("--fix", action="store_true", help="Auto-prune stale map cards and broken references")
+
     args = parser.parse_args()
 
     if args.subcommand == "init":
@@ -887,6 +891,65 @@ def main(argv=None):
                     badge = f"[{t.status}]"
                     print(f" {t.id:<10} | {badge:<12} | {t.complexity:<5} | {t.title[:32]}")
             print("=" * 70)
+    elif args.subcommand == "docs":
+        from teamzero.wiki import build_living_wiki, prune_and_validate_wiki, check_docs_drift
+        if args.action == "build":
+            res = build_living_wiki()
+            print("=" * 65)
+            print(" TeamZero Living Code Wiki Builder")
+            print("=" * 65)
+            print(f" [OK] Processed {res['total_modules']} modules via AST parsing.")
+            print(f" [OK] Generated .llms.txt ({res['llms_txt_bytes']} bytes).")
+            print(f" [OK] Updated Living Map cards in .teamzero/memory/map/.")
+            print(f" [OK] Generated .teamzero/wiki.json.")
+            print("=" * 65)
+        elif args.action == "check":
+            val = prune_and_validate_wiki(fix=args.fix)
+            drift = check_docs_drift()
+            print("=" * 65)
+            print(" TeamZero Docs-as-Code & Hyperlink Integrity Check")
+            print("=" * 65)
+            if val["broken_links_count"] == 0 and not val["stale_cards_detected"]:
+                print(" [OK] Hyperlink Integrity: All links valid, zero broken references.")
+            else:
+                print(f" [!] Found {val['broken_links_count']} broken links and {len(val['stale_cards_detected'])} stale cards.")
+                for bl in val["broken_links"]:
+                    print(f"     * {bl['source_file']}: '{bl['label']}' -> {bl['target']}")
+                for sc in val["stale_cards_detected"]:
+                    print(f"     * Stale map card: {sc}")
+            print()
+            if drift["passed"]:
+                print(" [OK] Docs-as-Code Gate: Code and documentation are synchronized.")
+            else:
+                print(" [!] Docs-as-Code Drift Warning:")
+                print(f"     {drift['recommendation']}")
+                print(f"     Changed code files: {', '.join(drift['code_files_changed'])}")
+            print("=" * 65)
+        elif args.action == "bonsai":
+            val = prune_and_validate_wiki(fix=True)
+            print("=" * 65)
+            print(" TeamZero Living Wiki Bonsai Pruner")
+            print("=" * 65)
+            if val["cards_pruned"]:
+                print(f" [OK] Pruned {len(val['cards_pruned'])} stale module cards:")
+                for c in val["cards_pruned"]:
+                    print(f"     - Removed {c}")
+            else:
+                print(" [OK] Wiki is clean and trimmed. Zero stale cards found.")
+            print("=" * 65)
+        else:  # status
+            from teamzero.config import MAP_DIR, ADR_DIR, LLMS_TXT_FILE
+            maps_cnt = len(list(MAP_DIR.glob("*.md"))) if MAP_DIR.is_dir() else 0
+            adrs_cnt = len(list(ADR_DIR.glob("*.md"))) if ADR_DIR.is_dir() else 0
+            llms_ok = LLMS_TXT_FILE.exists()
+            print("=" * 65)
+            print(" TeamZero Living Documentation Status")
+            print("=" * 65)
+            print(f" Living Architecture Maps : {maps_cnt} cards (.teamzero/memory/map/)")
+            print(f" Architecture Decision Records: {adrs_cnt} ADRs (.teamzero/memory/adr/)")
+            print(f" Flat LLM Index (.llms.txt) : {'READY' if llms_ok else 'MISSING (run tz docs build)'}")
+            print(f" Runbooks Directory        : .teamzero/runbooks/")
+            print("=" * 65)
     else:
         parser.print_help()
 

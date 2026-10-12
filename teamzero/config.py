@@ -56,6 +56,10 @@ PAYROLL_LEDGER = LEDGER_DIR / "payroll.jsonl"
 RECEIPTS_LEDGER = LEDGER_DIR / "receipts.jsonl"
 CONSTITUTION_FILE = ORG_DIR / "constitution.yaml"
 TASKS_REGISTRY_FILE = ORG_DIR / "tasks.json"
+WIKI_DIR = ORG_DIR / "wiki"
+RUNBOOKS_DIR = ORG_DIR / "runbooks"
+LLMS_TXT_FILE = ROOT_DIR / ".llms.txt"
+WIKI_JSON_FILE = ORG_DIR / "wiki.json"
 
 MINTKEY_FILE = ORG_DIR / ".mintkey"
 
