@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0.dev1] - 2026-10-12
+
+### Added
+- **Dynamic Project Root Discovery** (`teamzero/config.py`): Dynamically resolves active project root via `TZ_PROJECT_DIR`, upward directory inspection (`.teamzero` / `.git`), or package fallback.
+- **Project Bootstrapping Engine** (`teamzero/init_project.py`, `tz init`): Scaffolds `.teamzero/` governance, constitution, providers, HMAC keys, and memory directories in any host codebase.
+- **Unified Modular CLI & Console Script** (`teamzero/cli.py`, `pyproject.toml`): Exposes standard `tz` entry point for development installations (`pip install -e .`) and host project management.
+- **Project Initialization Test Suite** (`tests/test_init_project.py`): Unit tests verifying scaffold creation, idempotency, and root discovery.
+
+### Changed
+- `tz.py`: Streamlined to a lightweight entry point delegating to `teamzero.cli.main`.
+- Package version aligned to `0.1.0.dev1` across `pyproject.toml` and `teamzero/__init__.py`.
+
 ## [0.1.0-alpha.2] - 2026-10-12
 
 ### Added

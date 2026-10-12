@@ -3,8 +3,35 @@ import secrets
 import sys
 from pathlib import Path
 
-# Paths
-ROOT_DIR = Path(__file__).resolve().parent.parent
+def find_project_root() -> Path:
+    """Discovers the active project root directory:
+    1. TZ_PROJECT_DIR environment variable if explicitly set.
+    2. Ascending search from current working directory looking for .teamzero or .git.
+    3. Fallback to package parent directory if .teamzero exists there.
+    4. Fallback to Path.cwd().
+    """
+    env_root = os.environ.get("TZ_PROJECT_DIR")
+    if env_root:
+        p = Path(env_root).resolve()
+        if p.exists():
+            return p
+
+    try:
+        current = Path.cwd().resolve()
+        for candidate in [current, *current.parents]:
+            if (candidate / ".teamzero").is_dir() or (candidate / ".git").is_dir():
+                return candidate
+    except Exception:
+        pass
+
+    pkg_parent = Path(__file__).resolve().parent.parent
+    if (pkg_parent / ".teamzero").is_dir():
+        return pkg_parent
+
+    return Path.cwd().resolve()
+
+
+ROOT_DIR = find_project_root()
 ORG_DIR = ROOT_DIR / ".teamzero"
 MEMORY_DIR = ORG_DIR / "memory"
 ADR_DIR = MEMORY_DIR / "adr"

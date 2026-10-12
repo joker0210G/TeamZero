@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Build & Packaging
+*.egg-info/
+build/
+dist/
+
 # Pytest / Coverage
 .pytest_cache/
 .coverage

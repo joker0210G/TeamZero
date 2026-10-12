@@ -1,6 +1,8 @@
 """TeamZero: Autonomous Agentic AI Software Organization Foundation Package."""
 
-__version__ = "1.0.0"
+__version__ = "0.1.0.dev1"
+
+from teamzero.init_project import init_project
 
 from teamzero.governance import (
     sign_receipt,
@@ -16,6 +18,7 @@ from teamzero.refund_service import calculate_refund
 
 __all__ = [
     "__version__",
+    "init_project",
     "sign_receipt",
     "verify_receipt",
     "envelope",
