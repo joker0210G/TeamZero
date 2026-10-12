@@ -1,6 +1,6 @@
-"""Configuration and constants for TeamZero."""
-
 import os
+import secrets
+import sys
 from pathlib import Path
 
 # Paths
@@ -22,8 +22,6 @@ TRUST_LEDGER = LEDGER_DIR / "trust.jsonl"
 PAYROLL_LEDGER = LEDGER_DIR / "payroll.jsonl"
 RECEIPTS_LEDGER = LEDGER_DIR / "receipts.jsonl"
 CONSTITUTION_FILE = ORG_DIR / "constitution.yaml"
-
-import secrets
 
 MINTKEY_FILE = ORG_DIR / ".mintkey"
 

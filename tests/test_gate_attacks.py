@@ -64,7 +64,7 @@ def test_forge_attack():
     # Attacker tries to mint receipt with a guessed fake secret
     fake_secret = "attacker-guessed-secret-xyz"
     body = f"{kind}:{subject}:{issued_at}"
-    fake_sig = hmac.new(fake_secret.encode(), body.encode(), hashlib.sha256).hexdigest()[:24]
+    fake_sig = hmac.new(fake_secret.encode(), body.encode(), hashlib.sha256).hexdigest()
     fake_receipt = f"TZ-{fake_sig}"
     
     # Server verifies against actual SERVER_SECRET

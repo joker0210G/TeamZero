@@ -62,10 +62,12 @@ def get_receipts_for_sha(sha: str) -> List[Dict[str, Any]]:
 
 def check_breaker_findings(sha: str) -> Tuple[bool, str, Dict[str, Any]]:
     """Inspects canonical server-side findings packet for the commit SHA."""
+    matches = list(FINDINGS_DIR.glob(f"*_{sha}.json"))
     short_sha = sha[:8]
-    matches = list(FINDINGS_DIR.glob(f"*_{short_sha}.json"))
+    if not matches and len(sha) > 8:
+        matches = list(FINDINGS_DIR.glob(f"*_{short_sha}.json"))
     if not matches:
-        return False, f"No Breaker findings packet found for SHA {short_sha}", {}
+        return False, f"No Breaker findings packet found for SHA {sha}", {}
     
     try:
         with open(matches[0], "r", encoding="utf-8") as f:
