@@ -11,6 +11,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -81,7 +82,7 @@ def teamzero_query_memory(query: str, k: int = 5, client_id: str = "anon") -> st
         update_trust_score(f"mcp:{client_id}", delta=-10, reason="Injected poison pattern in query")
         return envelope(f"WARNING: Adversarial query rejected. Security event logged.")
 
-    query_tokens = set(re.findall(r"\w+", query.lower())) if 're' in globals() else set(query.lower().split())
+    query_tokens = set(re.findall(r"\w+", query.lower()))
     scored_files = []
 
     for path in MEMORY_DIR.rglob("*.*"):
@@ -195,8 +196,11 @@ def teamzero_submit_candidate(
 def teamzero_get_findings(commit_sha: str, client_id: str = "anon") -> Dict[str, Any]:
     """Fetches the canonical server-side findings packet for a commit SHA."""
     _authorize_client(client_id)
-    pattern = str(FINDINGS_DIR / f"*_{commit_sha[:8]}.json")
-    matches = glob.glob(pattern)
+    pattern_full = str(FINDINGS_DIR / f"*_{commit_sha}.json")
+    matches = glob.glob(pattern_full)
+    if not matches and len(commit_sha) > 8:
+        pattern_short = str(FINDINGS_DIR / f"*_{commit_sha[:8]}.json")
+        matches = glob.glob(pattern_short)
     if matches:
         with open(matches[0], "r", encoding="utf-8") as f:
             return json.load(f)

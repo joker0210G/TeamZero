@@ -33,7 +33,7 @@ def sign_receipt(subject: str, kind: str) -> Dict[str, Any]:
     This is the only currency the merge gate trusts."""
     issued_at = time.time()
     body = f"{kind}:{subject}:{issued_at}"
-    sig = hmac.new(SERVER_SECRET.encode(), body.encode(), hashlib.sha256).hexdigest()[:24]
+    sig = hmac.new(SERVER_SECRET.encode(), body.encode(), hashlib.sha256).hexdigest()
     
     record = {
         "receipt": f"TZ-{sig}",
@@ -54,7 +54,7 @@ def verify_receipt(receipt_str: str, subject: str, kind: str, issued_at: float) 
     """Verifies that an HMAC receipt is authentic."""
     sig = receipt_str.replace("TZ-", "")
     body = f"{kind}:{subject}:{issued_at}"
-    expected = hmac.new(SERVER_SECRET.encode(), body.encode(), hashlib.sha256).hexdigest()[:24]
+    expected = hmac.new(SERVER_SECRET.encode(), body.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(sig, expected)
 
 
