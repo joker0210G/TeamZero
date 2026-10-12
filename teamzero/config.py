@@ -60,6 +60,7 @@ WIKI_DIR = ORG_DIR / "wiki"
 RUNBOOKS_DIR = ORG_DIR / "runbooks"
 LLMS_TXT_FILE = ROOT_DIR / ".llms.txt"
 WIKI_JSON_FILE = ORG_DIR / "wiki.json"
+CACHE_DIR = ORG_DIR / "cache"
 
 MINTKEY_FILE = ORG_DIR / ".mintkey"
 

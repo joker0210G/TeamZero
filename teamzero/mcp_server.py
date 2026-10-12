@@ -67,6 +67,8 @@ STANDARD_TOOLS = CORE_TOOLS | {
     "teamzero_parse_prd",
     "teamzero_get_living_wiki",
     "teamzero_check_docs_drift",
+    "teamzero_inspect_outline",
+    "teamzero_read_symbol",
 }
 
 def _normalize_tool_name(name: str) -> str:
@@ -919,6 +921,54 @@ def teamzero_get_living_wiki(client_id: str = "anon") -> str:
     if LLMS_TXT_FILE.exists():
         return envelope(LLMS_TXT_FILE.read_text(encoding="utf-8"))
     return envelope("# Living Wiki (.llms.txt) not found")
+
+
+@mcp.tool()
+def teamzero_inspect_outline(file_path: str, client_id: str = "anon") -> Dict[str, Any]:
+    """Inspects file AST and returns a compact 15-25 line outline (Table of Contents) with symbol line numbers."""
+    _authorize_client(client_id)
+    from teamzero.smart_reader import inspect_outline
+    return inspect_outline(file_path)
+
+
+@mcp.tool()
+def teamzero_read_symbol(
+    file_path: str,
+    symbol_name: str,
+    force: bool = False,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Extracts only the target function, class, or method body via AST.
+    Implements SQZ reference compression: repeat reads of unchanged symbols return lightweight ref IDs."""
+    _authorize_client(client_id)
+    from teamzero.smart_reader import read_symbol
+    return read_symbol(file_path, symbol_name, client_id=client_id, force=force)
+
+
+@mcp.tool()
+def teamzero_read_compressed(
+    file_path: str,
+    max_lines: int = 350,
+    force: bool = False,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Reads a file with progressive disclosure guardrails (>350 lines blocked without force) and SQZ compression."""
+    _authorize_client(client_id)
+    from teamzero.smart_reader import read_compressed_file
+    return read_compressed_file(file_path, max_lines=max_lines, force=force, client_id=client_id)
+
+
+@mcp.tool()
+def teamzero_filter_log(
+    raw_output: str,
+    max_lines: int = 60,
+    client_id: str = "anon"
+) -> str:
+    """Strips terminal progress bars, repeat timestamps, and noise, returning only semantic errors and tracebacks."""
+    _authorize_client(client_id)
+    from teamzero.smart_reader import filter_terminal_output
+    return filter_terminal_output(raw_output, max_lines=max_lines)
+
 
 
 

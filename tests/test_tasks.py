@@ -108,13 +108,13 @@ def test_tool_loading_modes():
     ).strip()
     assert int(out_core) == 7
 
-    # Standard mode should load 20 tools
+    # Standard mode should load 22 tools
     env_std = dict(os.environ, TEAMZERO_TOOLS="standard")
     out_std = subprocess.check_output(
         [sys.executable, "-c", "import teamzero.mcp_server as s; print(len(s.mcp._tool_manager._tools))"],
         env=env_std, text=True
     ).strip()
-    assert int(out_std) == 20
+    assert int(out_std) == 22
 
     # Custom selection
     env_custom = dict(os.environ, TEAMZERO_TOOLS="get_tasks,run_gauntlet")

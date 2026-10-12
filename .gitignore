@@ -37,3 +37,4 @@ dump_teamzero_chat.py
 .teamzero/triggers/state.json
 .teamzero/health.json
 .teamzero/inbox/decisions/review_*.md
+.teamzero/cache/

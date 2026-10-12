@@ -33,6 +33,7 @@
 - **racing** (`racing.py`): TeamZero Hypothesis Racing Engine ( Parallel Research Peers).
 - **ratchet** (`ratchet.py`): TeamZero Self-Healing Ratchet Engine (Improvement #10).
 - **refund_service** (`refund_service.py`): [REFERENCE EXAMPLE / TEMPLATE FIXTURE]
+- **smart_reader** (`smart_reader.py`): Smart AST-Aware, Symbol-Indexed, and Reference-Compressed File Reader.
 - **spec_compiler** (`spec_compiler.py`): Spec-to-Test Compiler & Spec Mutation Testing Engine.
 - **supply_chain** (`supply_chain.py`): Advanced Supply-Chain Defense Scanner for TeamZero.
 - **synthesize** (`synthesize.py`): TeamZero ADR Auto-Synthesis Engine .

@@ -368,6 +368,13 @@ def main(argv=None):
     docs_p.add_argument("action", nargs="?", default="status", choices=["build", "check", "bonsai", "status"], help="Documentation action to perform")
     docs_p.add_argument("--fix", action="store_true", help="Auto-prune stale map cards and broken references")
 
+    read_p = subparsers.add_parser("read", help="AST-aware symbol reader, SQZ token compressor, and log filter")
+    read_p.add_argument("mode", choices=["outline", "symbol", "file", "clean-log"], help="Read mode")
+    read_p.add_argument("target", type=str, help="Target file path")
+    read_p.add_argument("symbol", nargs="?", default=None, help="Target symbol name (for mode=symbol)")
+    read_p.add_argument("--force", action="store_true", help="Bypass SQZ cache or size guardrails")
+    read_p.add_argument("--max-lines", type=int, default=350, help="Line threshold before progressive disclosure triggers (default 350)")
+
     args = parser.parse_args()
 
     if args.subcommand == "init":
@@ -949,6 +956,62 @@ def main(argv=None):
             print(f" Architecture Decision Records: {adrs_cnt} ADRs (.teamzero/memory/adr/)")
             print(f" Flat LLM Index (.llms.txt) : {'READY' if llms_ok else 'MISSING (run tz docs build)'}")
             print(f" Runbooks Directory        : .teamzero/runbooks/")
+            print("=" * 65)
+    elif args.subcommand == "read":
+        from teamzero.smart_reader import inspect_outline, read_symbol, read_compressed_file, filter_terminal_output
+        if args.mode == "outline":
+            res = inspect_outline(args.target)
+            if "error" in res:
+                print(f"[!] Error: {res['error']}")
+                sys.exit(1)
+            print("=" * 65)
+            print(res["outline_text"])
+            print("=" * 65)
+        elif args.mode == "symbol":
+            if not args.symbol:
+                print("[!] Error: Specify symbol name: tz read symbol <file> <symbol>")
+                sys.exit(1)
+            res = read_symbol(args.target, args.symbol, force=args.force)
+            if "error" in res:
+                print(f"[!] Error: {res['error']}")
+                if res.get("available_symbols"):
+                    print(f" Available symbols: {', '.join(res['available_symbols'])}")
+                sys.exit(1)
+            print("=" * 65)
+            if res["status"] == "SQZ_CACHED":
+                print(f" [SQZ CACHE HIT] {res['message']}")
+            else:
+                print(f" Symbol: {res['symbol']} ({res['lines']}, {res['line_count']} lines)")
+                if res.get("docstring"):
+                    print(f" Docstring: {res['docstring']}")
+                print("-" * 65)
+                print(res["content"])
+            print("=" * 65)
+        elif args.mode == "file":
+            res = read_compressed_file(args.target, max_lines=args.max_lines, force=args.force)
+            if "error" in res:
+                print(f"[!] Error: {res['error']}")
+                sys.exit(1)
+            if res.get("guardrail_triggered"):
+                print("=" * 65)
+                print(f" [!] {res['message']}")
+                print("-" * 65)
+                print(res["outline"])
+                print("=" * 65)
+            elif res["status"] == "SQZ_CACHED":
+                print("=" * 65)
+                print(f" [SQZ CACHE HIT] {res['message']}")
+                print("=" * 65)
+            else:
+                print(res["content"])
+        elif args.mode == "clean-log":
+            target_p = Path(args.target)
+            raw = target_p.read_text(encoding="utf-8", errors="replace") if target_p.exists() else args.target
+            cleaned = filter_terminal_output(raw)
+            print("=" * 65)
+            print(" Filtered Terminal / Log Output")
+            print("=" * 65)
+            print(cleaned)
             print("=" * 65)
     else:
         parser.print_help()
