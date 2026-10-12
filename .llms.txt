@@ -10,6 +10,7 @@
 5. **INV-05 (Failure Has A Price)**: Breaker catches deduct token budgets and decay agent trust scores.
 
 ## Architecture & Submodules
+- **anti_hallucination** (`anti_hallucination.py`): Anti-Hallucination, Semantic Grounding, and Neurosymbolic Guardrails Engine.
 - **canary_lineage** (`canary_lineage.py`): TeamZero Canary Lineage Tracker (Improvement #8).
 - **cli** (`cli.py`): TeamZero Unified CLI (`tz`).
 - **config** (`config.py`): System module

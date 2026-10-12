@@ -375,6 +375,11 @@ def main(argv=None):
     read_p.add_argument("--force", action="store_true", help="Bypass SQZ cache or size guardrails")
     read_p.add_argument("--max-lines", type=int, default=350, help="Line threshold before progressive disclosure triggers (default 350)")
 
+    ground_p = subparsers.add_parser("ground", help="Anti-hallucination, AST grounding, and neurosymbolic guardrails")
+    ground_p.add_argument("mode", choices=["tools", "verify", "assumptions", "swarm"], help="Grounding mode")
+    ground_p.add_argument("target", type=str, help="Target query, file path, or brief")
+    ground_p.add_argument("--top-k", type=int, default=5, help="Top-k tools to select (for mode=tools)")
+
     args = parser.parse_args()
 
     if args.subcommand == "init":
@@ -1012,6 +1017,73 @@ def main(argv=None):
             print(" Filtered Terminal / Log Output")
             print("=" * 65)
             print(cleaned)
+            print("=" * 65)
+    elif args.subcommand == "ground":
+        from teamzero.anti_hallucination import rank_tools, validate_code_grounding, surface_assumptions, multiagent_cross_validate
+        if args.mode == "tools":
+            from teamzero.mcp_server import mcp
+            all_tools = [{"name": n, "description": getattr(t, "description", "")} for n, t in mcp._tool_manager._tools.items()]
+            ranked = rank_tools(args.target, all_tools, top_k=args.top_k)
+            print("=" * 65)
+            print(f" Semantic Tool Selection for: '{args.target}'")
+            print("=" * 65)
+            for idx, t in enumerate(ranked, 1):
+                print(f" {idx}. {t['name']:<35} (Relevance: {t['relevance_score']})")
+                print(f"    {t['description'][:75]}...")
+            print("=" * 65)
+        elif args.mode == "verify":
+            target_p = Path(args.target)
+            code = target_p.read_text(encoding="utf-8", errors="replace") if target_p.exists() else args.target
+            report = validate_code_grounding(code)
+            print("=" * 65)
+            print(" AST Code Grounding & Fabrication Audit")
+            print("=" * 65)
+            if report["grounded"]:
+                print(" [OK] All imports, modules, and symbols exist in repository.")
+                print(" Verdict: VERIFIED_GROUNDED (Zero hallucinations)")
+            else:
+                print(f" [!] Hallucination Detected ({report['total_findings']} findings):")
+                for f in report["findings"]:
+                    print(f"     * [{f['kind']}] {f['message']}")
+                    if f.get("suggestions"):
+                        print(f"       Did you mean: {', '.join(f['suggestions'])}")
+            print("=" * 65)
+        elif args.mode == "assumptions":
+            target_p = Path(args.target)
+            brief = target_p.read_text(encoding="utf-8", errors="replace") if target_p.exists() else args.target
+            report = surface_assumptions(brief)
+            print("=" * 65)
+            print(" Pre-Flight Assumptions & Uncertainty Elicitation")
+            print("=" * 65)
+            print(" Stated Assumptions:")
+            for a in report["stated_assumptions"]:
+                print(f"   - {a}")
+            if report["ambiguities_flagged"]:
+                print("\n Ambiguities Flagged:")
+                for amb in report["ambiguities_flagged"]:
+                    print(f"   ! {amb}")
+            if report["clarifying_questions"]:
+                print("\n Clarifying Questions (Ask Before Coding):")
+                for q in report["clarifying_questions"]:
+                    print(f"   ? {q}")
+            print("\n Policy:")
+            print(f"   {report['uncertainty_policy']}")
+            print("=" * 65)
+        elif args.mode == "swarm":
+            target_p = Path(args.target)
+            code = target_p.read_text(encoding="utf-8", errors="replace") if target_p.exists() else args.target
+            verdict = multiagent_cross_validate(code)
+            print("=" * 65)
+            print(" Multi-Agent Cross-Validation Swarm (Executor -> Validator -> Critic)")
+            print("=" * 65)
+            print(f" Verdict: {verdict.status}")
+            print(f" Executor: {verdict.executor_summary}")
+            print(f" Validator: Grounded={verdict.validator_grounding.get('grounded')}")
+            print(f" Critic: Compliant={verdict.critic_compliance.get('compliant')}")
+            if verdict.reasons:
+                print("\n Findings:")
+                for r in verdict.reasons:
+                    print(f"   - {r}")
             print("=" * 65)
     else:
         parser.print_help()

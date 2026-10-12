@@ -69,6 +69,9 @@ STANDARD_TOOLS = CORE_TOOLS | {
     "teamzero_check_docs_drift",
     "teamzero_inspect_outline",
     "teamzero_read_symbol",
+    "teamzero_search_tools",
+    "teamzero_verify_grounding",
+    "teamzero_surface_assumptions",
 }
 
 def _normalize_tool_name(name: str) -> str:
@@ -88,12 +91,34 @@ def _should_register_tool(tool_name: str) -> bool:
     allowed = {_normalize_tool_name(item) for item in env_mode.split(",") if item.strip()}
     return tool_name in allowed
 
+import functools
+import inspect
+
+def _wrap_with_neurosymbolic_hook(fn):
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        try:
+            from teamzero.anti_hallucination import NeurosymbolicValidator
+            validator = NeurosymbolicValidator()
+            sig = inspect.signature(fn)
+            bound = sig.bind_partial(*args, **kwargs)
+            passed, viol = validator.validate_tool_call(fn.__name__, bound.arguments)
+            if not passed and viol:
+                raise ValueError(f"[NEUROSYMBOLIC GUARDRAIL BLOCKED: {viol.rule_id}] {viol.message} Mitigation: {viol.mitigation}")
+        except ValueError:
+            raise
+        except Exception:
+            pass
+        return fn(*args, **kwargs)
+    return wrapped
+
 _orig_tool = mcp.tool
 
 def _configurable_tool(*args, **kwargs):
     def decorator(fn):
         if _should_register_tool(fn.__name__):
-            return _orig_tool(*args, **kwargs)(fn)
+            wrapped_fn = _wrap_with_neurosymbolic_hook(fn)
+            return _orig_tool(*args, **kwargs)(wrapped_fn)
         return fn
     if len(args) == 1 and callable(args[0]):
         fn = args[0]
@@ -968,6 +993,62 @@ def teamzero_filter_log(
     _authorize_client(client_id)
     from teamzero.smart_reader import filter_terminal_output
     return filter_terminal_output(raw_output, max_lines=max_lines)
+
+
+@mcp.tool()
+def teamzero_search_tools(query: str, top_k: int = 5, client_id: str = "anon") -> Dict[str, Any]:
+    """Ranks and selects the top-k most relevant tools for a user query to eliminate choice overload and tool hallucinations."""
+    _authorize_client(client_id)
+    from teamzero.anti_hallucination import rank_tools
+    all_tools = []
+    for name, tool_obj in mcp._tool_manager._tools.items():
+        all_tools.append({
+            "name": name,
+            "description": getattr(tool_obj, "description", "")
+        })
+    ranked = rank_tools(query, all_tools, top_k=top_k)
+    return {
+        "query": query,
+        "selected_tool_count": len(ranked),
+        "total_registered_tools": len(all_tools),
+        "tools": ranked
+    }
+
+
+@mcp.tool()
+def teamzero_verify_grounding(code_str: str, client_id: str = "anon") -> Dict[str, Any]:
+    """Validates generated Python code against actual repository AST to catch fabricated modules or non-existent symbols."""
+    _authorize_client(client_id)
+    from teamzero.anti_hallucination import validate_code_grounding
+    return validate_code_grounding(code_str)
+
+
+@mcp.tool()
+def teamzero_surface_assumptions(prompt_or_brief: str, client_id: str = "anon") -> Dict[str, Any]:
+    """Surfaces unstated assumptions, ambiguous requirements, and missing edge cases before code generation."""
+    _authorize_client(client_id)
+    from teamzero.anti_hallucination import surface_assumptions
+    return surface_assumptions(prompt_or_brief)
+
+
+@mcp.tool()
+def teamzero_validate_candidate_multiagent(
+    candidate_code: str,
+    feature: str = "general",
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Runs a 3-agent cross-validation swarm (Executor -> Validator -> Critic) before code is committed or merged."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.anti_hallucination import multiagent_cross_validate
+    verdict = multiagent_cross_validate(candidate_code, feature=feature)
+    return {
+        "status": verdict.status,
+        "executor_summary": verdict.executor_summary,
+        "validator_grounding": verdict.validator_grounding,
+        "critic_compliance": verdict.critic_compliance,
+        "reasons": verdict.reasons
+    }
+
 
 
 
