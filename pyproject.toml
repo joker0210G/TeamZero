@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 tz = "teamzero.cli:main"
+teamzero = "teamzero.cli:main"
 
 [project.optional-dependencies]
 dev = [

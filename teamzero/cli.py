@@ -28,7 +28,7 @@ from teamzero.config import (
 from teamzero.governance import sign_receipt, load_constitution
 from teamzero.merge_gate import evaluate_merge_prerequisites
 from teamzero.inbox_triage import interactive_triage, print_summary
-from teamzero.init_project import init_project
+from teamzero.init_project import cmd_init, cmd_doctor, init_project
 
 if sys.platform == "win32":
     try:
@@ -273,13 +273,20 @@ def cmd_check_merge(ref: str = "HEAD"):
     print("=" * 65)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="TeamZero CLI (`tz`)")
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="TeamZero CLI (`tz` / `teamzero`)")
     subparsers = parser.add_subparsers(dest="subcommand", help="Command to run")
 
     init_p = subparsers.add_parser("init", help="Bootstrap TeamZero governance layer inside a project")
-    init_p.add_argument("--path", type=str, default=".", help="Target project root directory (default: current directory)")
-    init_p.add_argument("--name", type=str, help="Organization or product name (default: directory name)")
+    init_p.add_argument("project_root", nargs="?", default=".", help="Target project root (default: cwd)")
+    init_p.add_argument("--path", type=str, default=None, help=argparse.SUPPRESS)
+    init_p.add_argument("--name", default=None, help="Organization name (default: directory name)")
+    init_p.add_argument("--profile", default="auto", choices=["auto", "python", "node", "rust", "go", "generic"], help="Project profile for gate selection (default: auto-detect)")
+    init_p.add_argument("--force", action="store_true", help="Back up an existing .teamzero and re-initialize")
+    init_p.add_argument("--mcp-cmd", default=sys.executable, help="Command the MCP client uses to launch the server (default: current python)")
+
+    doc_p = subparsers.add_parser("doctor", help="Verify the governance layer is healthy")
+    doc_p.add_argument("project_root", nargs="?", default=".", help="Project root (default: cwd)")
 
     subparsers.add_parser("status", help="Show organization status, vitals, and trust scores")
 
@@ -351,21 +358,9 @@ def main():
     args = parser.parse_args()
 
     if args.subcommand == "init":
-        target = Path(args.path).resolve()
-        org_path = init_project(target, name=args.name)
-        print("=" * 65)
-        print(" TeamZero Governance Initialization")
-        print("=" * 65)
-        print(f" [OK] Initialized TeamZero layer at: {org_path}")
-        print(f" Quality Constitution:  {org_path / 'constitution.yaml'}")
-        print(f" Asks Inbox:            {org_path / 'inbox' / 'asks'}")
-        print(f" Memory & Specs:        {org_path / 'memory' / 'specs'}")
-        print("=" * 65)
-        print(" Next Steps:")
-        print(f"   1. cd {target}")
-        print("   2. Run 'tz status' to inspect organizational vitals.")
-        print("   3. Add your domain specifications to .teamzero/memory/specs/")
-        print("=" * 65)
+        return cmd_init(args)
+    elif args.subcommand == "doctor":
+        return cmd_doctor(args)
     elif args.subcommand == "status":
         cmd_status()
     elif args.subcommand == "inbox":

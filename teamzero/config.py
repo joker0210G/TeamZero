@@ -5,12 +5,12 @@ from pathlib import Path
 
 def find_project_root() -> Path:
     """Discovers the active project root directory:
-    1. TZ_PROJECT_DIR environment variable if explicitly set.
+    1. TZ_ROOT or TZ_PROJECT_DIR environment variable if explicitly set.
     2. Ascending search from current working directory looking for .teamzero or .git.
     3. Fallback to package parent directory if .teamzero exists there.
     4. Fallback to Path.cwd().
     """
-    env_root = os.environ.get("TZ_PROJECT_DIR")
+    env_root = os.environ.get("TZ_ROOT", "").strip() or os.environ.get("TZ_PROJECT_DIR", "").strip()
     if env_root:
         p = Path(env_root).resolve()
         if p.exists():
