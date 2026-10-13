@@ -389,3 +389,129 @@ class TaskRegistry:
             "high_complexity_count": len(high),
             "candidates_for_expansion": high
         }
+
+    def auto_score_complexity(self, target_files: Optional[List[str]] = None, description: str = "") -> int:
+        """AST-aware complexity estimator.
+        
+        Evaluates number of target files, line count, external dependencies, and risk terms.
+        Returns a complexity score from 1 (trivial) to 10 (architectural overhaul).
+        """
+        score = 2
+        # Analyze target files
+        if target_files:
+            score += min(4, len(target_files) * 2)
+            for f in target_files:
+                p = Path(f)
+                if p.exists() and p.is_file():
+                    try:
+                        lines = len(p.read_text(encoding="utf-8", errors="replace").splitlines())
+                        if lines > 300:
+                            score += 2
+                        elif lines > 100:
+                            score += 1
+                    except Exception:
+                        pass
+        # Semantic keyword risk
+        risk_keywords = ["architecture", "refactor", "security", "cryptographic", "concurrency", "ast", "n-body", "physics"]
+        desc_lower = description.lower()
+        for kw in risk_keywords:
+            if kw in desc_lower:
+                score += 1
+        return min(10, max(1, score))
+
+    def merge_duplicate_tasks(self, similarity_threshold: float = 0.6) -> Dict[str, Any]:
+        """Detects and merges semantically duplicate tasks using token Jaccard similarity.
+        
+        Preserves the earlier task and merges target files, criteria, and subtasks.
+        """
+        tasks = self.load_tasks()
+        if len(tasks) < 2:
+            return {"merged_count": 0, "merged_pairs": [], "remaining_tasks": len(tasks)}
+
+        def tokenize(text: str) -> set[str]:
+            words = re.findall(r"\w+", text.lower())
+            stop_words = {"the", "a", "an", "and", "or", "to", "for", "in", "on", "of", "with", "is", "task", "subtask"}
+            return {w for w in words if len(w) > 2 and w not in stop_words}
+
+        merged_pairs = []
+        to_remove = set()
+
+        for i in range(len(tasks)):
+            t1 = tasks[i]
+            if t1.id in to_remove:
+                continue
+            s1 = tokenize(f"{t1.title} {t1.description}")
+            if not s1:
+                continue
+            for j in range(i + 1, len(tasks)):
+                t2 = tasks[j]
+                if t2.id in to_remove or t1.parent_id != t2.parent_id:
+                    continue
+                s2 = tokenize(f"{t2.title} {t2.description}")
+                if not s2:
+                    continue
+                intersection = len(s1.intersection(s2))
+                union = len(s1.union(s2))
+                sim = intersection / union if union > 0 else 0.0
+                if sim >= similarity_threshold:
+                    # Merge t2 into t1
+                    t1.target_files = sorted(list(set(t1.target_files + t2.target_files)))
+                    t1.acceptance_criteria = sorted(list(set(t1.acceptance_criteria + t2.acceptance_criteria)))
+                    t1.subtasks = sorted(list(set(t1.subtasks + t2.subtasks)))
+                    to_remove.add(t2.id)
+                    merged_pairs.append({
+                        "primary_task": t1.id,
+                        "merged_task": t2.id,
+                        "similarity": round(sim, 2)
+                    })
+
+        if to_remove:
+            remaining = [t for t in tasks if t.id not in to_remove]
+            # Clean up dependencies
+            for t in remaining:
+                t.dependencies = [d for d in t.dependencies if d not in to_remove]
+            self.save_tasks(remaining)
+            tasks = remaining
+
+        return {
+            "merged_count": len(merged_pairs),
+            "merged_pairs": merged_pairs,
+            "remaining_tasks": len(tasks)
+        }
+
+    def reprioritize_from_breaker(self, breaker_findings: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Elevates task complexity and priority based on Red Team Breaker findings.
+        
+        If a finding impacts a task's target files or domain, that task is boosted in complexity
+        and moved ahead in dependency ordering.
+        """
+        tasks = self.load_tasks()
+        impacted_tasks = []
+
+        critical_files = set()
+        for f in breaker_findings:
+            sev = f.get("severity", "").upper()
+            if sev in ["CRITICAL", "HIGH"]:
+                for token in f.get("evidence", "").split():
+                    if ".py" in token or "/" in token:
+                        critical_files.add(token.strip(" '\"`(),;"))
+
+        for t in tasks:
+            matched = False
+            for tf in t.target_files:
+                if any(cf in tf for cf in critical_files):
+                    matched = True
+                    break
+            if matched:
+                t.complexity = min(10, t.complexity + 2)
+                t.description = f"[URGENT: Red Team Breaker Finding] {t.description}"
+                impacted_tasks.append(t.id)
+
+        if impacted_tasks:
+            self.save_tasks(tasks)
+
+        return {
+            "critical_files_detected": list(critical_files),
+            "impacted_tasks_count": len(impacted_tasks),
+            "reprioritized_task_ids": impacted_tasks
+        }

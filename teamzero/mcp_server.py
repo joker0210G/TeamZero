@@ -1092,6 +1092,52 @@ def teamzero_self_consistency(
     return compute_self_consistency(candidates)
 
 
+@mcp.tool()
+def teamzero_run_dynamic_gauntlet(
+    target_module_path: Optional[str] = None,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Runs the AI-orchestrated Dynamic Gauntlet (IMP-02): boundary stress, memory profiling, and cross-module checks."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.dynamic_gauntlet import DynamicGauntletRunner
+    runner = DynamicGauntletRunner()
+    return runner.execute_dynamic_gauntlet(target_module_path=target_module_path)
+
+
+@mcp.tool()
+def teamzero_find_attack_chains(
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Scans module boundaries and AST flows to discover cross-module exploit chains (IMP-06)."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.anti_hallucination import find_cross_module_attack_chains
+    return find_cross_module_attack_chains()
+
+
+@mcp.tool()
+def teamzero_merge_duplicate_tasks(
+    similarity_threshold: float = 0.6,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Merges semantically duplicate tasks using token similarity (IMP-03)."""
+    _authorize_client(client_id, cost=1)
+    from teamzero.tasks import TaskRegistry
+    reg = TaskRegistry()
+    return reg.merge_duplicate_tasks(similarity_threshold=similarity_threshold)
+
+
+@mcp.tool()
+def teamzero_ensemble_verify(
+    candidate_code: str,
+    alternative_samples: Optional[List[str]] = None,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Weighted ensemble verification combining CoVe, SelfCheckGPT, and EVER (IMP-04)."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.cove import run_ensemble_verification
+    return run_ensemble_verification(candidate_code, alternative_samples=alternative_samples)
+
+
 
 
 

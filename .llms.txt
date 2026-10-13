@@ -17,6 +17,7 @@
 - **cove** (`cove.py`): Chain-of-Verification (CoVe) & Multi-Path Reasoning Engine for TeamZero.
 - **debugger** (`debugger.py`): Time-Travel Debugger for TeamZero.
 - **diversity** (`diversity.py`): Solution Diversity Guard (Quality-Diversity Exploration).
+- **dynamic_gauntlet** (`dynamic_gauntlet.py`): TeamZero Dynamic Gauntlet & Performance Verification Engine (IMP-02).
 - **evaluator** (`evaluator.py`): TeamZero Task Evaluator Engine ( Task-Owned Evaluators).
 - **evidence** (`evidence.py`): TeamZero Typed Evidence Graph Engine.
 - **generation** (`generation.py`): TeamZero Generational Task Loop Engine (Generational Research Loops).

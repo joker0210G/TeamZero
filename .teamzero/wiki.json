@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "generated_at": "2026-10-12T15:26:21Z",
-  "total_modules": 32,
+  "generated_at": "2026-10-13T07:49:35Z",
+  "total_modules": 33,
   "modules": {
     "anti_hallucination": {
       "module_name": "anti_hallucination",
@@ -111,6 +111,14 @@
           "signature": "multiagent_cross_validate(candidate_code: str, feature: str='general', root: Path=ROOT_DIR) -> SwarmVerdict",
           "line_number": 367,
           "decorators": []
+        },
+        {
+          "name": "find_cross_module_attack_chains",
+          "kind": "function",
+          "docstring": "Analyzes AST and module boundaries to find cross-module exploit chains.\n\nIdentifies high-risk boundary traversals where untrusted external data \n(e.g., NASA API, network payloads, CLI inputs) travels across modules to reach\nunvalidated invariant holders or sensitive physics kernels without parameter sanitization.",
+          "signature": "find_cross_module_attack_chains(root: Path=ROOT_DIR) -> Dict[str, Any]",
+          "line_number": 441,
+          "decorators": []
         }
       ],
       "dependencies": [
@@ -132,7 +140,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "canary_lineage": {
       "module_name": "canary_lineage",
@@ -168,7 +176,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "cli": {
       "module_name": "cli",
@@ -258,7 +266,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "config": {
       "module_name": "config",
@@ -292,7 +300,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "cove": {
       "module_name": "cove",
@@ -368,6 +376,38 @@
           "signature": "compute_self_consistency(candidates: List[str]) -> Dict[str, Any]",
           "line_number": 369,
           "decorators": []
+        },
+        {
+          "name": "run_selfcheck_verify",
+          "kind": "function",
+          "docstring": "SelfCheckGPT-style multi-sample consistency verification.\n\nCompares candidate against alternate temperature/seed samples to compute fact-level hallucination risk.",
+          "signature": "run_selfcheck_verify(candidate_code: str, alternative_samples: List[str]) -> Dict[str, Any]",
+          "line_number": 435,
+          "decorators": []
+        },
+        {
+          "name": "run_ever_verify",
+          "kind": "function",
+          "docstring": "EVER (Real-Time Step-Wise Verification & Rectification).\n\nBreaks code into atomic statements, checks each against repository AST reality,\nand identifies the exact statement triggering first hallucination or invariant break.",
+          "signature": "run_ever_verify(candidate_code: str, root: Path=ROOT_DIR) -> Dict[str, Any]",
+          "line_number": 465,
+          "decorators": []
+        },
+        {
+          "name": "run_cove_rag_verify",
+          "kind": "function",
+          "docstring": "CoVe-RAG+: Couples CoVe verification with RAG over authority documents (ADRs, Traps).\n\nVerifies that architectural assumptions adhere to published Architecture Decision Records.",
+          "signature": "run_cove_rag_verify(candidate_code: str, authority_docs_dir: Optional[Path]=None, root: Path=ROOT_DIR) -> Dict[str, Any]",
+          "line_number": 509,
+          "decorators": []
+        },
+        {
+          "name": "run_ensemble_verification",
+          "kind": "function",
+          "docstring": "Weighted ensemble verification combining CoVe, SelfCheckGPT, and EVER.",
+          "signature": "run_ensemble_verification(candidate_code: str, alternative_samples: Optional[List[str]]=None, root: Path=ROOT_DIR) -> Dict[str, Any]",
+          "line_number": 543,
+          "decorators": []
         }
       ],
       "dependencies": [
@@ -386,7 +426,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "debugger": {
       "module_name": "debugger",
@@ -447,7 +487,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "diversity": {
       "module_name": "diversity",
@@ -492,7 +532,92 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
+    },
+    "dynamic_gauntlet": {
+      "module_name": "dynamic_gauntlet",
+      "file_path": "D:\\Workspace\\TeamZero\\teamzero\\dynamic_gauntlet.py",
+      "docstring": "TeamZero Dynamic Gauntlet & Performance Verification Engine (IMP-02).\n\nReplaces hardcoded, static-only testing with AI-orchestrated dynamic gauntlets:\n1. Dynamic Test Generation: Synthesizes boundary-case test fixtures based on AST inspection and Red Team findings.\n2. Resource & Memory Profiling: Evaluates CPU/RAM allocation regressions across executions.\n3. Resilience Probes: Tests service behavior under network/API timeouts, 503 errors, and corrupted payloads.\n4. Cryptographic Dynamic Receipt Issuance: Emits verifiable HMAC receipts upon gauntlet completion.",
+      "classes": [
+        {
+          "name": "DynamicTestResult",
+          "kind": "class",
+          "docstring": "",
+          "signature": "",
+          "line_number": 28,
+          "decorators": [
+            "dataclass"
+          ]
+        },
+        {
+          "name": "DynamicGauntletRunner",
+          "kind": "class",
+          "docstring": "Orchestrates dynamic, non-hardcoded stress and edge-case gauntlet runs.",
+          "signature": "",
+          "line_number": 42,
+          "decorators": []
+        }
+      ],
+      "functions": [
+        {
+          "name": "DynamicTestResult.to_dict",
+          "kind": "method",
+          "docstring": "",
+          "signature": "to_dict(self) -> Dict[str, Any]",
+          "line_number": 38,
+          "decorators": []
+        },
+        {
+          "name": "DynamicGauntletRunner.__init__",
+          "kind": "method",
+          "docstring": "",
+          "signature": "__init__(self, root: Path=ROOT_DIR)",
+          "line_number": 45,
+          "decorators": []
+        },
+        {
+          "name": "DynamicGauntletRunner.generate_boundary_probes",
+          "kind": "method",
+          "docstring": "Scans module AST and extracts input boundaries (e.g. numeric ranges, string conditions).",
+          "signature": "generate_boundary_probes(self, target_file: Path) -> List[Dict[str, Any]]",
+          "line_number": 48,
+          "decorators": []
+        },
+        {
+          "name": "DynamicGauntletRunner.run_resource_profile",
+          "kind": "method",
+          "docstring": "Profiles peak memory allocation and execution latency.",
+          "signature": "run_resource_profile(self, func: Callable, *args, **kwargs) -> Dict[str, Any]",
+          "line_number": 74,
+          "decorators": []
+        },
+        {
+          "name": "DynamicGauntletRunner.execute_dynamic_gauntlet",
+          "kind": "method",
+          "docstring": "Runs the complete dynamic gauntlet over the targeted or core modules.",
+          "signature": "execute_dynamic_gauntlet(self, target_module_path: Optional[str]=None) -> Dict[str, Any]",
+          "line_number": 103,
+          "decorators": []
+        }
+      ],
+      "dependencies": [
+        "__future__",
+        "ast",
+        "dataclasses",
+        "inspect",
+        "json",
+        "os",
+        "pathlib",
+        "sys",
+        "teamzero",
+        "time",
+        "tracemalloc",
+        "typing"
+      ],
+      "adr_citations": [],
+      "has_traps": false,
+      "has_spec": false,
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "evaluator": {
       "module_name": "evaluator",
@@ -522,7 +647,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "evidence": {
       "module_name": "evidence",
@@ -643,7 +768,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "generation": {
       "module_name": "generation",
@@ -734,7 +859,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "governance": {
       "module_name": "governance",
@@ -824,7 +949,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "health": {
       "module_name": "health",
@@ -888,7 +1013,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "ideation": {
       "module_name": "ideation",
@@ -1011,7 +1136,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "inbox_triage": {
       "module_name": "inbox_triage",
@@ -1091,7 +1216,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "init_project": {
       "module_name": "init_project",
@@ -1199,7 +1324,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "journal": {
       "module_name": "journal",
@@ -1279,7 +1404,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "mcp_server": {
       "module_name": "mcp_server",
@@ -1736,11 +1861,43 @@
           "decorators": []
         },
         {
+          "name": "teamzero_run_dynamic_gauntlet",
+          "kind": "function",
+          "docstring": "Runs the AI-orchestrated Dynamic Gauntlet (IMP-02): boundary stress, memory profiling, and cross-module checks.",
+          "signature": "teamzero_run_dynamic_gauntlet(target_module_path: Optional[str]=None, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1096,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_find_attack_chains",
+          "kind": "function",
+          "docstring": "Scans module boundaries and AST flows to discover cross-module exploit chains (IMP-06).",
+          "signature": "teamzero_find_attack_chains(client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1108,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_merge_duplicate_tasks",
+          "kind": "function",
+          "docstring": "Merges semantically duplicate tasks using token similarity (IMP-03).",
+          "signature": "teamzero_merge_duplicate_tasks(similarity_threshold: float=0.6, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1118,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_ensemble_verify",
+          "kind": "function",
+          "docstring": "Weighted ensemble verification combining CoVe, SelfCheckGPT, and EVER (IMP-04).",
+          "signature": "teamzero_ensemble_verify(candidate_code: str, alternative_samples: Optional[List[str]]=None, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1130,
+          "decorators": []
+        },
+        {
           "name": "resource_constitution",
           "kind": "function",
           "docstring": "The machine-enforced Quality Constitution \u2014 read-only view.",
           "signature": "resource_constitution() -> str",
-          "line_number": 1102,
+          "line_number": 1148,
           "decorators": []
         },
         {
@@ -1748,7 +1905,7 @@
           "kind": "function",
           "docstring": "Living Map card for a module.",
           "signature": "resource_map_card(module: str) -> str",
-          "line_number": 1110,
+          "line_number": 1156,
           "decorators": []
         },
         {
@@ -1756,7 +1913,7 @@
           "kind": "function",
           "docstring": "Architecture Decision Record by ID.",
           "signature": "resource_adr(adr_id: str) -> str",
-          "line_number": 1119,
+          "line_number": 1165,
           "decorators": []
         },
         {
@@ -1764,7 +1921,7 @@
           "kind": "function",
           "docstring": "Known domain traps and anti-patterns for a module.",
           "signature": "resource_traps(module: str) -> str",
-          "line_number": 1127,
+          "line_number": 1173,
           "decorators": []
         },
         {
@@ -1772,7 +1929,7 @@
           "kind": "function",
           "docstring": "Executable Specification by feature name.",
           "signature": "resource_spec(feature: str) -> str",
-          "line_number": 1136,
+          "line_number": 1182,
           "decorators": []
         },
         {
@@ -1780,7 +1937,7 @@
           "kind": "function",
           "docstring": "Summary of latest tasks, trust scores, and open founder Asks.",
           "signature": "resource_digest() -> str",
-          "line_number": 1144,
+          "line_number": 1190,
           "decorators": []
         }
       ],
@@ -1805,7 +1962,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "merge_gate": {
       "module_name": "merge_gate",
@@ -1861,7 +2018,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "model_router": {
       "module_name": "model_router",
@@ -1938,7 +2095,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "mutation": {
       "module_name": "mutation",
@@ -2001,7 +2158,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "pareto": {
       "module_name": "pareto",
@@ -2053,7 +2210,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "peer_review": {
       "module_name": "peer_review",
@@ -2108,7 +2265,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "racing": {
       "module_name": "racing",
@@ -2140,7 +2297,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "ratchet": {
       "module_name": "ratchet",
@@ -2187,7 +2344,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "refund_service": {
       "module_name": "refund_service",
@@ -2211,7 +2368,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "smart_reader": {
       "module_name": "smart_reader",
@@ -2326,7 +2483,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "spec_compiler": {
       "module_name": "spec_compiler",
@@ -2364,7 +2521,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "supply_chain": {
       "module_name": "supply_chain",
@@ -2460,7 +2617,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "synthesize": {
       "module_name": "synthesize",
@@ -2488,7 +2645,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "tasks": {
       "module_name": "tasks",
@@ -2666,6 +2823,30 @@
           "signature": "analyze_complexity(self) -> Dict[str, Any]",
           "line_number": 376,
           "decorators": []
+        },
+        {
+          "name": "TaskRegistry.auto_score_complexity",
+          "kind": "method",
+          "docstring": "AST-aware complexity estimator.\n\nEvaluates number of target files, line count, external dependencies, and risk terms.\nReturns a complexity score from 1 (trivial) to 10 (architectural overhaul).",
+          "signature": "auto_score_complexity(self, target_files: Optional[List[str]]=None, description: str='') -> int",
+          "line_number": 393,
+          "decorators": []
+        },
+        {
+          "name": "TaskRegistry.merge_duplicate_tasks",
+          "kind": "method",
+          "docstring": "Detects and merges semantically duplicate tasks using token Jaccard similarity.\n\nPreserves the earlier task and merges target files, criteria, and subtasks.",
+          "signature": "merge_duplicate_tasks(self, similarity_threshold: float=0.6) -> Dict[str, Any]",
+          "line_number": 422,
+          "decorators": []
+        },
+        {
+          "name": "TaskRegistry.reprioritize_from_breaker",
+          "kind": "method",
+          "docstring": "Elevates task complexity and priority based on Red Team Breaker findings.\n\nIf a finding impacts a task's target files or domain, that task is boosted in complexity\nand moved ahead in dependency ordering.",
+          "signature": "reprioritize_from_breaker(self, breaker_findings: List[Dict[str, Any]]) -> Dict[str, Any]",
+          "line_number": 482,
+          "decorators": []
         }
       ],
       "dependencies": [
@@ -2684,7 +2865,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "triggers": {
       "module_name": "triggers",
@@ -2780,7 +2961,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     },
     "wiki": {
       "module_name": "wiki",
@@ -2906,7 +3087,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-12T15:26:21Z"
+      "last_updated": "2026-10-13T07:49:35Z"
     }
   }
 }

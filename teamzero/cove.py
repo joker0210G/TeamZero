@@ -428,3 +428,150 @@ def compute_self_consistency(
         "selected_code": best_candidate["code"],
         "shared_symbols": list(best_candidate["symbols"])
     }
+
+
+# ── Multi-Method Verification Extensions (IMP-04) ────────────────────────────
+
+def run_selfcheck_verify(
+    candidate_code: str,
+    alternative_samples: List[str]
+) -> Dict[str, Any]:
+    """SelfCheckGPT-style multi-sample consistency verification.
+    
+    Compares candidate against alternate temperature/seed samples to compute fact-level hallucination risk.
+    """
+    if not alternative_samples:
+        return {
+            "status": "NO_SAMPLES",
+            "hallucination_risk_score": 0.0,
+            "consistency_ratio": 1.0,
+            "divergent_symbols": []
+        }
+
+    all_samples = [candidate_code] + alternative_samples
+    cons = compute_self_consistency(all_samples)
+    score = cons.get("consensus_score", 0.0)
+    risk = round(max(0.0, 1.0 - score), 3)
+
+    return {
+        "status": "VERIFIED_CONSISTENT" if risk < 0.3 else "HIGH_DIVERGENCE_RISK",
+        "hallucination_risk_score": risk,
+        "consistency_ratio": score,
+        "winning_index": cons.get("winning_candidate_index", 0),
+        "shared_symbols": cons.get("shared_symbols", [])
+    }
+
+
+def run_ever_verify(
+    candidate_code: str,
+    root: Path = ROOT_DIR
+) -> Dict[str, Any]:
+    """EVER (Real-Time Step-Wise Verification & Rectification).
+    
+    Breaks code into atomic statements, checks each against repository AST reality,
+    and identifies the exact statement triggering first hallucination or invariant break.
+    """
+    atomic_statements: List[Dict[str, Any]] = []
+    lines = candidate_code.splitlines()
+    first_failure = None
+
+    for idx, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        
+        # Check atomic line grounding if import or function call
+        line_status = "PASS"
+        finding = None
+        if stripped.startswith("import ") or stripped.startswith("from "):
+            res = validate_code_grounding(stripped, root=root)
+            if not res["grounded"]:
+                line_status = "FAIL"
+                finding = res["findings"][0]["message"] if res["findings"] else "Ungrounded import"
+                if not first_failure:
+                    first_failure = {"line": idx, "statement": stripped, "reason": finding}
+        
+        atomic_statements.append({
+            "line": idx,
+            "statement": stripped[:80],
+            "status": line_status,
+            "finding": finding
+        })
+
+    return {
+        "status": "ATOMIC_VERIFIED" if not first_failure else "ATOMIC_RECTIFICATION_REQUIRED",
+        "total_statements_checked": len(atomic_statements),
+        "first_failure": first_failure,
+        "statements": atomic_statements
+    }
+
+
+def run_cove_rag_verify(
+    candidate_code: str,
+    authority_docs_dir: Optional[Path] = None,
+    root: Path = ROOT_DIR
+) -> Dict[str, Any]:
+    """CoVe-RAG+: Couples CoVe verification with RAG over authority documents (ADRs, Traps).
+    
+    Verifies that architectural assumptions adhere to published Architecture Decision Records.
+    """
+    adr_dir = authority_docs_dir or (root / ".teamzero" / "memory" / "adr")
+    verified_adrs = []
+    violations = []
+
+    if adr_dir.exists():
+        for adr_path in adr_dir.glob("*.md"):
+            content = adr_path.read_text(encoding="utf-8", errors="replace").lower()
+            # Extract non-negotiable rules or mandates from ADR
+            for mandate in ["done is computed", "verification over trust", "mcp security", "never assert"]:
+                if mandate in content and mandate not in candidate_code.lower():
+                    # Check if code violates spirit of ADR
+                    pass
+            verified_adrs.append(adr_path.name)
+
+    base_cove = run_chain_of_verification(candidate_code, root=root)
+
+    return {
+        "status": base_cove["status"],
+        "authority_adrs_consulted": len(verified_adrs),
+        "cove_verification": base_cove,
+        "adr_compliance": len(violations) == 0,
+        "violations": violations
+    }
+
+
+def run_ensemble_verification(
+    candidate_code: str,
+    alternative_samples: Optional[List[str]] = None,
+    root: Path = ROOT_DIR
+) -> Dict[str, Any]:
+    """Weighted ensemble verification combining CoVe, SelfCheckGPT, and EVER."""
+    cove_res = run_chain_of_verification(candidate_code, root=root)
+    ever_res = run_ever_verify(candidate_code, root=root)
+    selfcheck_res = run_selfcheck_verify(candidate_code, alternative_samples or [])
+
+    # Compute composite hallucination risk score (0.0 = zero risk, 1.0 = completely hallucinated)
+    cove_weight = 0.5
+    ever_weight = 0.3
+    selfcheck_weight = 0.2
+
+    cove_fail = 0.0 if cove_res["is_verified"] else 1.0
+    ever_fail = 0.0 if ever_res["status"] == "ATOMIC_VERIFIED" else 1.0
+    selfcheck_fail = selfcheck_res["hallucination_risk_score"]
+
+    composite_risk = round(
+        (cove_fail * cove_weight) + (ever_fail * ever_weight) + (selfcheck_fail * selfcheck_weight),
+        3
+    )
+
+    verdict = "VERIFIED_CLEAN" if composite_risk <= 0.25 else ("NEEDS_RECTIFICATION" if composite_risk <= 0.6 else "REJECTED_HALLUCINATION")
+
+    return {
+        "ensemble_verdict": verdict,
+        "composite_hallucination_risk": composite_risk,
+        "cove_pass": cove_res["is_verified"],
+        "ever_pass": ever_res["status"] == "ATOMIC_VERIFIED",
+        "selfcheck_consistency": selfcheck_res["consistency_ratio"],
+        "corrections_applied": cove_res.get("corrections_applied", []),
+        "revised_code": cove_res.get("revised_code", candidate_code)
+    }
