@@ -31,3 +31,11 @@ These rules govern all Git and GitHub command execution in this workspace.
 3. Verify staged changes: `git diff --staged`.
 4. Follow Conventional Commits: `<type>(<scope>): <summary>` (imperative mood, <= 50 chars).
 5. Explain motivation in commit body when non-trivial.
+
+## TeamZero MCP Operating Guidelines
+
+When the TeamZero MCP Server is active, adhere to the following execution sequence:
+1. **Zero Raw Dumps:** Call `teamzero_inspect_outline` or `teamzero_read_symbol` instead of dumping whole source files.
+2. **Fact-Check Before Commit:** Call `teamzero_cove_verify` or `teamzero_ensemble_verify` to audit code against hallucinations.
+3. **Verify via Gauntlet:** Execute `teamzero_run_gauntlet` or `teamzero_run_dynamic_gauntlet` to compute completion mathematically before requesting review.
+4. **Tool Discovery:** If unsure which tool to invoke, run `teamzero_search_tools(query)`.
