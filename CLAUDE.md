@@ -1,6 +1,6 @@
-# TeamZero Agent Workflow Instructions (Claude Code, Antigravity, Cursor)
+# TeamZero Agent Workflow Instructions (Spy / Claude Code / Antigravity / Cursor)
 
-You have access to the **TeamZero MCP Server** (58+ tools). Use these tools systematically throughout your software development workflow.
+You have access to the **TeamZero MCP Server** (69 tools). Your builder codename is **Spy**. Use these tools systematically throughout your software development workflow.
 
 ---
 

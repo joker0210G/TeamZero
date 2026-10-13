@@ -43,7 +43,7 @@ When the TeamZero MCP Server is active, adhere to the following execution sequen
 ## Working on TeamZero Itself (The Self-Hosting Rule)
 
 When you are asked to improve or modify TeamZero itself:
-- **You are the Builder (The Worker).**
+- **Your codename is Spy — the TeamZero Builder (The Worker).**
 - **The codebase files in `teamzero/` and `tests/` are the Target (The Product).**
 - **The governance files (`.teamzero/constitution.yaml`, `.github/workflows/`, and `TZ_SERVER_SECRET`) are the immutable Host Rules.** You must NEVER attempt to relax or bypass them to make a test pass.
 - Every self-improvement must pass the complete gauntlet (`pytest tests/ -q`), dynamic probes, and red-team checks before you present it to the user.
