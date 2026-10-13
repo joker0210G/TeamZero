@@ -30,3 +30,6 @@
 {"receipt": "TZ-627ac85f5212006834d34660", "subject": "TASK-LIVE-e4e4e567:e4e4e5674185", "kind": "breaker_run", "issued_at": 1791568481.1510901}
 {"receipt": "TZ-d2793541d8333a0a3dcb1d6d", "subject": "founder_approval:e4e4e5674185b7b213373287924e189754b060ea", "kind": "founder_approval", "issued_at": 1791568551.952197}
 {"receipt": "TZ-96e1ad1b553411abaf342819", "subject": "merge_gate:e4e4e5674185b7b213373287924e189754b060ea", "kind": "merge_attestation", "issued_at": 1791568562.646241}
+{"receipt": "TZ-1d4c4c02ea6caf193f762c011679391ec05246eae70e51e28cac1cdc07754d7f", "subject": "gauntlet_run:7f05936f201cf7065ddb04a5406a46de4fa53cd5", "kind": "gauntlet_run", "issued_at": 1791818928.970677}
+{"receipt": "TZ-1d7b894719076ac802010bcfa9a54f3ab3c8ffda29ff1be7eb78456b02115fe4", "subject": "DEMO-TASK-REFUND-001:a1b2c3d4e5f6", "kind": "breaker_run", "issued_at": 1791818947.7691627}
+{"receipt": "TZ-e8691a049a19b02f7dc3ba8d4400dcdb583f7a1ad0f211c262cff26c837cb68e", "subject": "gauntlet_run:76b3a00a44172c35619313a51f1cfb8ce43bd9e2", "kind": "gauntlet_run", "issued_at": 1791880654.1025038}

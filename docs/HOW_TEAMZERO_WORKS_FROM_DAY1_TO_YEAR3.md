@@ -42,12 +42,64 @@ When TeamZero enters `d:\Workspace\Einstein_simulator`, it runs two things — a
 
 ```mermaid
 flowchart TD
-    A["TeamZero arrives at Einstein_simulator"] --> B["tz docs build\n(X-Ray AST scan)"]
-    B --> C["33 Living Map Cards generated\n.teamzero/memory/map/"]
-    C --> D[".llms.txt flat index (4562 bytes)\nFor instant LLM onboarding"]
-    D --> E["tz gauntlet\n(Baseline health check)"]
-    E --> F["Cryptographic Receipt issued\nor Faults logged before touching code"]
+    A["TeamZero arrives at Einstein_simulator"] --> B["tz init\n(Genesis & Layman Cockpit)"]
+    B --> C["FOUNDER_COCKPIT.md & 3_YEAR_HORIZON.md\nPlain-English status dials & 3-year plan"]
+    C --> D["tz docs build\n(X-Ray AST scan)"]
+    D --> E["33 Living Map Cards & .llms.txt"]
+    E --> F["tz gauntlet\n(Baseline health check)"]
 ```
+
+---
+
+### Step 0: The Founder Cockpit & 3-Year Horizon — Zero Code Jargon ✅ *Verified Working*
+
+> **Question from the Founder:**
+> *"I'm not a technical coder. When TeamZero initializes on Day 1, how do I know what's going on, and how do we plan for the long term without drowning in tech jargon?"*
+
+Imagine you are the pilot of a state-of-the-art aircraft. You do not need to open the engine cowling mid-flight to inspect fuel injection nozzles or measure electrical resistance with a multimeter.
+
+**You need an airplane cockpit with 4 clear dials, a flight plan, and a radio.**
+
+When TeamZero initializes on Day 1 (`tz init`), it immediately writes two executive documents:
+
+#### 1. The Executive Cockpit (`.teamzero/FOUNDER_COCKPIT.md`)
+Instead of developer terminal output, the Founder gets a simple 1-page dashboard:
+
+| Dial | Status | What This Means in Plain English |
+| :--- | :--- | :--- |
+| 🛡️ **Shield Integrity (Quality)** | 🟢 **100% Solid** | All automated safety nets are catching bugs before they reach users. |
+| 🔒 **Security Vault (Safety)** | 🟢 **Locked Tight** | Zero exposed passwords, secret keys, or open backdoors found. |
+| 🗺️ **Living Blueprint (Documentation)** | 🟢 **Synchronized** | The AI's internal map matches what the software actually does. |
+| 📬 **Decision Queue (Founder Inbox)** | ⚪ **Clear** | No urgent approvals pending. Your team of agents is operating autonomously. |
+
+#### 2. The 3-Year Strategic Horizon (`.teamzero/3_YEAR_HORIZON.md`)
+On Day 1, TeamZero creates a plain-English strategic flight plan for the project:
+
+```mermaid
+flowchart LR
+    D1["Day 1: Genesis\nFirst Health Check"] --> Y1["Year 1: Strong Hull\nZero Silent Crashes"]
+    Y1 --> Y2["Year 2: Smart Co-Pilot\nSwarm Reviews & Auto-Fixes"]
+    Y2 --> Y3["Year 3: Space Station\nFully Autonomous Living Repo"]
+```
+
+- **Day 1 (Genesis & Reality Check):** First diagnostic scan. Lock down secrets, map all existing components, establish baseline health without breaking anything.
+- **Year 1 (The Strong Hull):** Rock-solid reliability. Stop tech debt before it starts. Every line of code written by human or AI must pass through automated referee gates.
+- **Year 2 (The Smart Co-Pilot):** 10x engineering velocity. Specialized AI swarms (Builder Spy, Red-Team Breaker, Validator) review and test features autonomously.
+- **Year 3 (The Autonomous Space Station):** Self-sustaining technology. Zero developer lock-in. 3-year institutional memory allows new contributors or agents to onboard in seconds.
+
+#### 3. How the Non-Technical Founder Steers (`tz inbox`)
+A non-technical Founder should **never** have to read git diffs or resolve code conflicts. Whenever TeamZero or an AI agent needs strategic guidance, it files a 1-paragraph Executive Ask:
+
+```
+[EXECUTIVE ASK #042]
+Situation: NASA has released a new API for planetary coordinates.
+Risk: If we don't update within 30 days, 3 exoplanet views will become unavailable.
+Cost: ~5 minutes of automated testing.
+Options:
+  [A] Approve upgrade (Recommended — Spy will test in sandbox first)
+  [B] Postpone for next month
+```
+The Founder types `tz inbox` (or replies in chat with "Approve [A]"), and TeamZero executes the decision safely.
 
 ---
 
@@ -350,6 +402,56 @@ Fast forward 3 years. Einstein_simulator has 50,000 users. NASA updated their TA
 3. **Blender 6.0 breaks GPU shaders** — the Red Team Breaker detects the regression in CI before any user notices. The Self-Healing Ratchet (`teamzero/ratchet.py`) retries the patch and logs it as a new Trap Card so it can never break the same way again.
 
 4. **A physics PhD student opens a PR with better relativity math** — the Multi-Agent Cross-Validation Swarm (Executor → Validator → Critic) cross-checks it against LIGO standards, runs self-consistency consensus, and reports the verdict before you even see the PR.
+
+---
+
+## 🔄 The Spy Self-Evolution Protocol: How the Builder Upgrades the System With Founder Approval
+
+> **The Question:**
+> *"As Spy, how do you improve TeamZero's codebase, and then upgrade yourself, while keeping the Founder completely in control without needing them to understand code?"*
+
+This is the **Self-Hosting Closed Loop**. Spy is your trusted chief engineer. Spy can draft improvements, test them rigorously, but **cannot deploy or evolve itself without your plain-English blessing.**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Founder as 👤 Founder (Layman Pilot)
+    participant Spy as 🕵️ Spy (The Builder)
+    participant Sandbox as 🧪 TeamZero Sandbox
+    participant OS as ⚙️ TeamZero Codebase
+
+    Spy->>Sandbox: 1. Builds candidate improvement & runs 100% tests
+    Sandbox-->>Spy: 2. Full gauntlet passes (98/98 tests green)
+    Spy->>Founder: 3. Files Plain-English Evolution Ask (No code jargon)
+    Note over Founder: Founder reviews 1-page summary & impacts
+    Founder->>Spy: 4. Gives approval ("Approved")
+    Spy->>OS: 5. Commits to TeamZero product repository
+    Spy->>Spy: 6. Re-indexes tools and evolves to new version
+    Spy-->>Founder: 7. "Evolution Complete — New capabilities online"
+```
+
+### The 5 Invariants of the Evolution Protocol
+
+1. **Phase 1: Diagnosis & Sandbox Drafting**
+   Spy identifies an improvement (e.g. adding a 1-page layman cockpit to `tz init` so non-technical founders don't have to decipher terminal logs).
+   Spy writes the code strictly in `teamzero/` and tests it in `tests/`.
+
+2. **Phase 2: Automated Verification Gauntlet (Referees First)**
+   Before asking the Founder anything, Spy runs `pytest tests/ -q` and `tz cove verify`.
+   If a single test fails, Spy diagnoses and fixes it inside the sandbox. The Founder is never bothered with debugging.
+
+3. **Phase 3: The Plain-English Evolution Ask (`tz inbox`)**
+   Spy translates the technical diff into a simple 3-part brief:
+   - **What was improved?** (e.g., *"Added a 1-page Executive Cockpit and 3-Year Strategic Plan to project initialization"*).
+   - **Why it matters to you:** (e.g., *"You can now see full project health at a glance without reading terminal logs"*).
+   - **Verification proof:** (e.g., *"98 of 98 automated safety tests passed in 6.7 seconds with zero side effects"*).
+
+4. **Phase 4: Founder Approval Gate (INV-04 Enforced)**
+   The Founder replies: `"Approved"`.
+   Without this explicit approval, Spy cannot merge changes to the core codebase.
+
+5. **Phase 5: Self-Upgrade Execution**
+   Spy merges the commit, updates the version manifest, and refreshes its own MCP tools. Spy is now operating at the new level, ready to use the new features for the Founder's next mission.
 
 ---
 

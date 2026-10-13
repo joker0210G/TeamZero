@@ -45,9 +45,15 @@ def test_init_project_creates_structure():
         # Check constitution contents
         const_data = yaml.safe_load((org_dir / "constitution.yaml").read_text(encoding="utf-8"))
         assert const_data["organization"]["name"] == "TestApp"
-        assert const_data["organization"]["version"] == "0.1.0-alpha.3"
+        assert const_data["organization"]["version"] == "0.2.0-alpha.1"
         assert const_data["organization"]["profile"] == "python"
         assert len(const_data["invariants"]) == 5
+
+        # Check layman founder cockpit and 3-year roadmap
+        assert (org_dir / "FOUNDER_COCKPIT.md").exists()
+        assert "Founder Executive Cockpit" in (org_dir / "FOUNDER_COCKPIT.md").read_text(encoding="utf-8")
+        assert (org_dir / "3_YEAR_HORIZON.md").exists()
+        assert "3-Year Strategic Horizon" in (org_dir / "3_YEAR_HORIZON.md").read_text(encoding="utf-8")
 
         # Check ledgers exist and have genesis events
         assert (org_dir / "ledger" / "trust.jsonl").exists()

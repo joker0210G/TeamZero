@@ -2,3 +2,4 @@
 {"task_id": "DEMO-TASK-REFUND-001", "agent_id": "engineer:demo-agent", "total_tokens": 0, "cost_usd": 0.0, "timestamp": "2026-10-09T16:58:15Z"}
 {"task_id": "TASK-REFUND-CLEAN-001", "agent_id": "engineer:claude-3-5-sonnet", "total_tokens": 0, "cost_usd": 0.0, "timestamp": "2026-10-09T17:41:36Z"}
 {"task_id": "TASK-LIVE-e4e4e567", "agent_id": "git:author", "total_tokens": 0, "cost_usd": 0.0, "timestamp": "2026-10-09T17:54:41Z"}
+{"task_id": "DEMO-TASK-REFUND-001", "agent_id": "engineer:demo-agent", "total_tokens": 0, "cost_usd": 0.0, "timestamp": "2026-10-12T15:29:07Z"}

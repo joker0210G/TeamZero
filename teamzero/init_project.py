@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Optional
 
 ORG_DIR_NAME = ".teamzero"
-TZ_VERSION = "0.1.0-alpha.3"
+TZ_VERSION = "0.2.0-alpha.1"
 
 # ---------------------------------------------------------------------------
 # Project profiles: detection signals + per-ecosystem deterministic gates.
@@ -199,6 +199,100 @@ initialized, and it anchors the trust ledger's root of authority.
 
 - No agent may modify `.teamzero/constitution.yaml` or `.github/workflows/*`.
 - Every subsequent ADR must cite this genesis record as ADR-000.
+"""
+
+FOUNDER_COCKPIT_TEMPLATE = """\
+# 🎛️ Founder Executive Cockpit: {org_name}
+*Built by TeamZero v{version} on {ts}*
+
+> [!NOTE]
+> **Dear Founder:** You do not need to read code or terminal logs. This cockpit translates your entire software system into 4 simple dials and plain-English actions.
+
+---
+
+## 🧭 Executive Dials (System Health at a Glance)
+
+| Dial | Status | What This Means in Plain English |
+| :--- | :--- | :--- |
+| 🛡️ **Shield Integrity (Quality)** | 🟢 **100% Solid** | All automated safety nets are catching bugs before they reach users. |
+| 🔒 **Security Vault (Safety)** | 🟢 **Locked Tight** | Zero exposed passwords, secret keys, or open backdoors found. |
+| 🗺️ **Living Blueprint (Documentation)** | 🟢 **Synchronized** | The AI's internal map matches what the software actually does. |
+| 📬 **Decision Queue (Founder Inbox)** | ⚪ **Clear** | No urgent approvals pending. Your team of agents is operating autonomously. |
+
+---
+
+## 🎯 Active Project Mission
+- **Project Name:** {org_name}
+- **Technology Profile:** {profile}
+- **Governance Mode:** Solo Founder + Autonomous Agents
+- **Genesis Key:** Verified and sealed under `.teamzero/.mintkey`
+
+---
+
+## 🚦 Traffic Light System
+- 🟢 **Green (All Clear):** Software is healthy, tests pass, no human action needed.
+- 🟡 **Yellow (Heads Up):** An AI has drafted a feature or an external library needs updating. Review whenever you have time.
+- 🔴 **Red (Action Required):** A gate was tripped or a major decision is waiting in your inbox (`tz inbox`).
+
+---
+
+## 📬 How to Steer Without Coding
+Whenever an agent needs your input, it files an **Executive Ask** in plain English.
+To view or approve pending items, simply run or tell your assistant:
+```bash
+tz inbox
+```
+You will get a clear 1-paragraph summary of the situation and simple options: **[Approve]**, **[Reject]**, or **[Ask Spy to Investigate]**.
+"""
+
+THREE_YEAR_HORIZON_TEMPLATE = """\
+# 🗺️ 3-Year Strategic Horizon: {org_name}
+*From Day 1 Launch to Autonomous Operations — Written for the Non-Technical Founder*
+
+---
+
+## 🔭 The 4 Flights of Growth
+
+```mermaid
+flowchart LR
+    D1["Day 1: Genesis\\nFirst Health Check"] --> Y1["Year 1: Strong Hull\\nZero Silent Crashes"]
+    Y1 --> Y2["Year 2: Smart Co-Pilot\\nSwarm Reviews & Auto-Fixes"]
+    Y2 --> Y3["Year 3: Space Station\\nFully Autonomous Living Repo"]
+```
+
+---
+
+### 🚀 Phase 1: Day 1 — Genesis & Reality Check
+**Goal:** Take off safely without breaking anything.
+- **What Happens:** TeamZero inspects the existing codebase, creates the Living Map, locks down secrets, and establishes the root of trust.
+- **Founder Value:** You immediately know the true health of your software with zero guessing.
+
+---
+
+### 🛡️ Phase 2: Year 1 — The Strong Hull (Rock-Solid Foundation)
+**Goal:** Build fast without building tech debt.
+- **What Happens:** Every single change authored by an AI or human must pass through the Merge Gauntlet. No code merges without a cryptographically signed receipt.
+- **Founder Value:** Your product doesn't randomly crash after updates. New developers or AI tools can join without destroying existing features.
+
+---
+
+### 🤖 Phase 3: Year 2 — The Smart Co-Pilot (Intelligent Automation)
+**Goal:** Multiply your engineering output by 10x with autonomous swarms.
+- **What Happens:** Specialized AI agents work in roles:
+  - **The Builder (Spy):** Drafts features and writes tests.
+  - **The Red Team:** Adversarially tries to break features before release.
+  - **The Validator:** Fact-checks logic against requirements.
+- **Founder Value:** You review executive summaries and approve strategic directions. The team handles implementation and bug fixes automatically.
+
+---
+
+### 🌌 Phase 4: Year 3 — The Autonomous Space Station (Self-Sustaining)
+**Goal:** Zero founder burnout, zero developer lock-in.
+- **What Happens:**
+  - **Institutional Memory:** 3 years of decisions, bug history, and rules are instantly queryable.
+  - **Adaptive Triggers:** External API changes (e.g. third-party partners) are auto-detected and patched.
+  - **Self-Healing Ratchet:** Minor glitches are detected and healed automatically before users notice.
+- **Founder Value:** The system runs smoothly even if you take a month off. You own a resilient, self-governing technology asset.
 """
 
 MCP_SERVER_BLOCK = {
@@ -404,6 +498,17 @@ def cmd_init(args) -> int:
     except Exception:
         pass
 
+    # 4d. Write Layman Founder Cockpit & 3-Year Horizon Roadmap
+    cockpit_md = FOUNDER_COCKPIT_TEMPLATE.format(
+        org_name=project_name, version=TZ_VERSION, ts=ts, profile=profile,
+    )
+    (org_dir / "FOUNDER_COCKPIT.md").write_text(cockpit_md, encoding="utf-8")
+
+    horizon_md = THREE_YEAR_HORIZON_TEMPLATE.format(
+        org_name=project_name, version=TZ_VERSION, ts=ts, profile=profile,
+    )
+    (org_dir / "3_YEAR_HORIZON.md").write_text(horizon_md, encoding="utf-8")
+
     # 5. Gitignore + MCP client configs
     mcp_cmd = getattr(args, "mcp_cmd", sys.executable)
     actions = merge_gitignore(root)
@@ -418,9 +523,11 @@ def cmd_init(args) -> int:
         print(f"  {a}")
     print()
     print("Next steps:")
-    print("  1. Review .teamzero/constitution.yaml — adjust gate commands to your project.")
-    print("  2. Commit .teamzero/ (the .mintkey is gitignored).")
-    print("  3. Start your agent; it should read .teamzero/constitution.yaml before writing code.")
+    print("  1. 🎛️ Founder Cockpit ready: .teamzero/FOUNDER_COCKPIT.md")
+    print("  2. 🗺️ 3-Year Strategic Plan ready: .teamzero/3_YEAR_HORIZON.md")
+    print("  3. 📬 Founder Steering: run `tz inbox` to review decisions without reading code.")
+    print("  4. Review .teamzero/constitution.yaml — adjust gate commands to your project.")
+    print("  5. Commit .teamzero/ (the .mintkey is gitignored).")
     return 0
 
 
