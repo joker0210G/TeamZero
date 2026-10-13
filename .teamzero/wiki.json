@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated_at": "2026-10-13T08:09:34Z",
+  "generated_at": "2026-10-13T08:14:45Z",
   "total_modules": 34,
   "modules": {
     "anti_hallucination": {
@@ -140,7 +140,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "canary_lineage": {
       "module_name": "canary_lineage",
@@ -176,7 +176,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "cli": {
       "module_name": "cli",
@@ -266,7 +266,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "config": {
       "module_name": "config",
@@ -300,7 +300,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "cove": {
       "module_name": "cove",
@@ -426,7 +426,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "debugger": {
       "module_name": "debugger",
@@ -487,7 +487,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "diversity": {
       "module_name": "diversity",
@@ -532,7 +532,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "dynamic_gauntlet": {
       "module_name": "dynamic_gauntlet",
@@ -617,7 +617,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "evaluator": {
       "module_name": "evaluator",
@@ -647,7 +647,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "evidence": {
       "module_name": "evidence",
@@ -768,7 +768,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "generation": {
       "module_name": "generation",
@@ -859,7 +859,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "governance": {
       "module_name": "governance",
@@ -949,7 +949,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "health": {
       "module_name": "health",
@@ -1013,7 +1013,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:33Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "ideation": {
       "module_name": "ideation",
@@ -1136,7 +1136,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "inbox_triage": {
       "module_name": "inbox_triage",
@@ -1216,7 +1216,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "init_project": {
       "module_name": "init_project",
@@ -1324,7 +1324,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "journal": {
       "module_name": "journal",
@@ -1404,7 +1404,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "mcp_server": {
       "module_name": "mcp_server",
@@ -1925,11 +1925,99 @@
           "decorators": []
         },
         {
+          "name": "teamzero_reprioritize_from_breaker",
+          "kind": "function",
+          "docstring": "Reprioritizes tasks and elevates complexity based on Red Team Breaker findings (IMP-03).",
+          "signature": "teamzero_reprioritize_from_breaker(breaker_findings: Optional[List[Dict[str, Any]]]=None, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1189,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_auto_score_complexity",
+          "kind": "function",
+          "docstring": "Estimates microtask complexity score (1-10) using AST metrics and risk keywords (IMP-03).",
+          "signature": "teamzero_auto_score_complexity(description: str, target_files: Optional[List[str]]=None, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1201,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_generate_dynamic_tests",
+          "kind": "function",
+          "docstring": "Synthesizes dynamic boundary-case test fixtures based on AST inspection (IMP-02).",
+          "signature": "teamzero_generate_dynamic_tests(target_module_path: Optional[str]=None, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1215,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_run_performance_gauntlet",
+          "kind": "function",
+          "docstring": "Profiles memory allocation and latency for critical service functions (IMP-02).",
+          "signature": "teamzero_run_performance_gauntlet(target_module: str='refund_service', client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1229,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_get_uncovered_paths",
+          "kind": "function",
+          "docstring": "Identifies untested execution branches and uncovered parameter combinations (IMP-02).",
+          "signature": "teamzero_get_uncovered_paths(target_module: str='refund_service', client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1243,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_selfcheck_verify",
+          "kind": "function",
+          "docstring": "Samples consistency across candidate completions to flag hallucinated details (IMP-04).",
+          "signature": "teamzero_selfcheck_verify(candidate_code: str, alternative_samples: Optional[List[str]]=None, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1254,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_ever_verify",
+          "kind": "function",
+          "docstring": "Breaks code into atomic statements and verifies grounding per line in real-time (IMP-04).",
+          "signature": "teamzero_ever_verify(candidate_code: str, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1266,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_rag_verify",
+          "kind": "function",
+          "docstring": "CoVe-RAG+ verification against published Architecture Decision Records (IMP-04).",
+          "signature": "teamzero_rag_verify(candidate_code: str, client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1277,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_synthesize_business_logic_exploits",
+          "kind": "function",
+          "docstring": "Synthesizes multi-step transaction or state sequences that evade naive single-step assertions (IMP-05).",
+          "signature": "teamzero_synthesize_business_logic_exploits(target_service: str='refund_service', client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1288,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_probe_supply_chain_vulnerabilities",
+          "kind": "function",
+          "docstring": "Traces whether external imported libraries expose vulnerable or unbounded call paths (IMP-05).",
+          "signature": "teamzero_probe_supply_chain_vulnerabilities(client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1301,
+          "decorators": []
+        },
+        {
+          "name": "teamzero_watch_docs",
+          "kind": "function",
+          "docstring": "Checks whether documentation cards require hot-reloading due to file modifications (IMP-01).",
+          "signature": "teamzero_watch_docs(client_id: str='anon') -> Dict[str, Any]",
+          "line_number": 1313,
+          "decorators": []
+        },
+        {
           "name": "resource_constitution",
           "kind": "function",
           "docstring": "The machine-enforced Quality Constitution \u2014 read-only view.",
           "signature": "resource_constitution() -> str",
-          "line_number": 1193,
+          "line_number": 1330,
           "decorators": []
         },
         {
@@ -1937,7 +2025,7 @@
           "kind": "function",
           "docstring": "Living Map card for a module.",
           "signature": "resource_map_card(module: str) -> str",
-          "line_number": 1201,
+          "line_number": 1338,
           "decorators": []
         },
         {
@@ -1945,7 +2033,7 @@
           "kind": "function",
           "docstring": "Architecture Decision Record by ID.",
           "signature": "resource_adr(adr_id: str) -> str",
-          "line_number": 1210,
+          "line_number": 1347,
           "decorators": []
         },
         {
@@ -1953,7 +2041,7 @@
           "kind": "function",
           "docstring": "Known domain traps and anti-patterns for a module.",
           "signature": "resource_traps(module: str) -> str",
-          "line_number": 1218,
+          "line_number": 1355,
           "decorators": []
         },
         {
@@ -1961,7 +2049,7 @@
           "kind": "function",
           "docstring": "Executable Specification by feature name.",
           "signature": "resource_spec(feature: str) -> str",
-          "line_number": 1227,
+          "line_number": 1364,
           "decorators": []
         },
         {
@@ -1969,7 +2057,7 @@
           "kind": "function",
           "docstring": "Summary of latest tasks, trust scores, and open founder Asks.",
           "signature": "resource_digest() -> str",
-          "line_number": 1235,
+          "line_number": 1372,
           "decorators": []
         }
       ],
@@ -1994,7 +2082,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "merge_gate": {
       "module_name": "merge_gate",
@@ -2050,7 +2138,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "model_router": {
       "module_name": "model_router",
@@ -2127,7 +2215,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "mutation": {
       "module_name": "mutation",
@@ -2190,7 +2278,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "pareto": {
       "module_name": "pareto",
@@ -2242,7 +2330,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "peer_review": {
       "module_name": "peer_review",
@@ -2297,7 +2385,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "racing": {
       "module_name": "racing",
@@ -2329,7 +2417,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "ratchet": {
       "module_name": "ratchet",
@@ -2376,7 +2464,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "redteam": {
       "module_name": "redteam",
@@ -2467,7 +2555,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "refund_service": {
       "module_name": "refund_service",
@@ -2491,7 +2579,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "smart_reader": {
       "module_name": "smart_reader",
@@ -2606,7 +2694,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "spec_compiler": {
       "module_name": "spec_compiler",
@@ -2644,7 +2732,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "supply_chain": {
       "module_name": "supply_chain",
@@ -2740,7 +2828,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "synthesize": {
       "module_name": "synthesize",
@@ -2768,7 +2856,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "tasks": {
       "module_name": "tasks",
@@ -2988,7 +3076,7 @@
       ],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "triggers": {
       "module_name": "triggers",
@@ -3084,7 +3172,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     },
     "wiki": {
       "module_name": "wiki",
@@ -3234,7 +3322,7 @@
       "adr_citations": [],
       "has_traps": false,
       "has_spec": false,
-      "last_updated": "2026-10-13T08:09:34Z"
+      "last_updated": "2026-10-13T08:14:45Z"
     }
   }
 }
