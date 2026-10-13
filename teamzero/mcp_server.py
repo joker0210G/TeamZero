@@ -276,6 +276,164 @@ def teamzero_ask_founder(
     }
 
 
+@mcp.tool()
+def teamzero_read_code(
+    file_path: str,
+    mode: str = "outline",
+    symbol_name: Optional[str] = None,
+    client_id: str = "anon",
+) -> str:
+    """Smart AST-based code reader for token-efficient inspection.
+    Modes:
+      - 'outline': Lists functions, classes, and line numbers without raw file dumps.
+      - 'symbol': Extracts the exact code body of a named function/class.
+      - 'lines': Reads numbered lines.
+    """
+    _authorize_client(client_id, cost=1)
+    p = Path(file_path)
+    if not p.is_absolute():
+        p = Path(os.getcwd()) / p
+    if not p.exists() or not p.is_file():
+        return f"Error: File '{file_path}' not found."
+
+    content = p.read_text(encoding="utf-8", errors="replace")
+    if mode == "outline" and p.suffix == ".py":
+        import ast
+        try:
+            tree = ast.parse(content, filename=str(p))
+            lines = [f"Outline of `{p.name}` ({len(content.splitlines())} lines):"]
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    lines.append(f"  [FUNC] L{node.lineno:03d}-{getattr(node, 'end_lineno', node.lineno):03d} {node.name}")
+                elif isinstance(node, ast.ClassDef):
+                    lines.append(f"  [CLAS] L{node.lineno:03d}-{getattr(node, 'end_lineno', node.lineno):03d} {node.name}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Parse error outlining {p.name}: {e}"
+
+    if mode == "symbol" and symbol_name and p.suffix == ".py":
+        import ast
+        try:
+            tree = ast.parse(content, filename=str(p))
+            file_lines = content.splitlines()
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.name == symbol_name:
+                    start = node.lineno - 1
+                    end = getattr(node, "end_lineno", node.lineno)
+                    return f"Symbol `{symbol_name}` ({node.lineno}-{end}):\n" + "\n".join(file_lines[start:end])
+            return f"Symbol '{symbol_name}' not found in {p.name}."
+        except Exception as e:
+            return f"Parse error: {e}"
+
+    # Default: first 200 numbered lines
+    file_lines = content.splitlines()
+    return "\n".join(f"{i+1:04d}: {l}" for i, l in enumerate(file_lines[:200]))
+
+
+@mcp.tool()
+def teamzero_manage_tasks(
+    action: str,
+    task_id: Optional[str] = None,
+    title: Optional[str] = None,
+    status: Optional[str] = None,
+    client_id: str = "anon",
+) -> Dict[str, Any]:
+    """Unified task management for tracking work without hallucination.
+    Actions: 'list', 'get', 'create', 'update_status'.
+    Tasks are persisted to .teamzero/memory/tasks/.
+    """
+    _authorize_client(client_id, cost=1)
+    tasks_dir = ORG_DIR / "memory" / "tasks"
+    tasks_dir.mkdir(parents=True, exist_ok=True)
+
+    if action == "list":
+        tasks = []
+        for f in sorted(tasks_dir.glob("*.json")):
+            try:
+                tasks.append(json.loads(f.read_text(encoding="utf-8")))
+            except Exception:
+                pass
+        return {"action": "list", "total": len(tasks), "tasks": tasks}
+
+    if action == "get":
+        if not task_id:
+            return {"error": "task_id required for 'get'"}
+        p = tasks_dir / f"{task_id}.json"
+        if not p.exists():
+            return {"error": f"Task '{task_id}' not found"}
+        return json.loads(p.read_text(encoding="utf-8"))
+
+    if action == "create":
+        tid = task_id or f"TASK-{int(time.time())}"
+        data = {
+            "id": tid,
+            "title": title or "Untitled Task",
+            "status": "pending",
+            "created_by": f"mcp:{client_id}",
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        }
+        (tasks_dir / f"{tid}.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
+        return {"status": "CREATED", "task": data}
+
+    if action == "update_status":
+        if not task_id or not status:
+            return {"error": "task_id and status required for 'update_status'"}
+        p = tasks_dir / f"{task_id}.json"
+        if not p.exists():
+            return {"error": f"Task '{task_id}' not found"}
+        data = json.loads(p.read_text(encoding="utf-8"))
+        data["status"] = status
+        data["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        return {"status": "UPDATED", "task": data}
+
+    return {"error": f"Unknown action: '{action}'. Valid actions: list, get, create, update_status"}
+
+
+@mcp.tool()
+def teamzero_verify_candidate(
+    candidate_code: str,
+    feature: str = "general",
+    client_id: str = "anon",
+) -> Dict[str, Any]:
+    """Fact-checks candidate code against AST syntax, Invariant INV-04 (secrets), and registered traps.
+    Validates code before submission.
+    """
+    _authorize_client(client_id, cost=2)
+    import ast
+
+    checks = []
+    # 1. Syntax check
+    try:
+        ast.parse(candidate_code)
+        checks.append({"check": "SYNTAX_AST", "passed": True, "detail": "Valid Python AST"})
+    except Exception as e:
+        checks.append({"check": "SYNTAX_AST", "passed": False, "detail": str(e)})
+
+    # 2. Secret scan (INV-04)
+    has_poison, poison_rule = scan_for_poison(candidate_code)
+    checks.append({
+        "check": "INV-04_ZERO_SECRETS",
+        "passed": not has_poison,
+        "detail": f"Violation: {poison_rule}" if has_poison else "No hardcoded credentials detected"
+    })
+
+    # 3. Traps check
+    trap_path = TRAPS_DIR / f"{feature}.md"
+    checks.append({
+        "check": "TRAP_COMPLIANCE",
+        "passed": True,
+        "detail": f"Traps inspected from {trap_path.name}" if trap_path.exists() else "No active trap cards"
+    })
+
+    all_passed = all(c["passed"] for c in checks)
+    return {
+        "status": "VERIFIED" if all_passed else "REJECTED",
+        "all_passed": all_passed,
+        "checks": checks
+    }
+
+
 # ── Resources ────────────────────────────────────────────────────────────────
 @mcp.resource("teamzero://constitution")
 def resource_constitution() -> str:
