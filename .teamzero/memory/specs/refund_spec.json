@@ -1,7 +1,7 @@
 {
   "spec_id": "SPEC-REFUND-001",
   "feature": "Customer Refund Calculation",
-  "module": "teamzero.refund_service",
+  "module": "tests.fixtures.demo_store.refund_service",
   "function": "calculate_refund",
   "params": {
     "amount_paid": "float",

@@ -3,7 +3,7 @@ Author: QA Agent (derived from SPEC-REFUND-001)
 """
 
 import pytest
-from teamzero.refund_service import calculate_refund
+from tests.fixtures.demo_store.refund_service import calculate_refund
 
 
 def test_r1_unopened_within_30_days_receives_full_refund():

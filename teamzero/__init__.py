@@ -12,7 +12,6 @@ from teamzero.governance import (
     record_payroll,
 )
 from teamzero.merge_gate import evaluate_merge_prerequisites, check_breaker_findings
-from teamzero.refund_service import calculate_refund
 
 __all__ = [
     "__version__",
@@ -25,5 +24,4 @@ __all__ = [
     "record_payroll",
     "evaluate_merge_prerequisites",
     "check_breaker_findings",
-    "calculate_refund",
 ]
