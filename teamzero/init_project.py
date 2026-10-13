@@ -2,10 +2,10 @@
 
 Initializes the institutional governance layer and project contract for any repository.
 Incorporates:
-  - Praxist Contract: Non-negotiable boundaries, protected paths, and Zones of Autonomy.
-  - TaskMaster: Structured task tracking in memory/tasks/.
-  - Graphify: Living architecture maps in memory/map/.
-  - Design Thinking: Non-linear onboarding interview in runbooks/onboarding_session.md.
+  - TeamZero Project Contract: Non-negotiable boundaries, protected paths, and Zones of Autonomy.
+  - Task Tracking: Structured task tracking in memory/tasks/.
+  - Architecture Maps: Living architecture maps in memory/map/.
+  - Design Thinking: Non-linear 5-round onboarding interview in runbooks/onboarding_session.md.
 """
 
 from __future__ import annotations
@@ -112,7 +112,7 @@ organization:
   version: "{version}"
   profile: "{profile}"
 
-# ── Zones of Autonomy (Praxist Model) ─────────────────────────────────────────
+# ── Zones of Autonomy ────────────────────────────────────────────────────────
 zones_of_autonomy:
   green_autonomy_zone:
     description: "Low-risk, high-frequency actions agents execute autonomously"
@@ -146,7 +146,7 @@ invariants:
     name: "Failure Has A Price"
     rule: "Failed gates deduct from task token budget and decay agent trust scores."
 
-# ── Protected Non-Negotiables (Praxist Contract) ──────────────────────────────
+# ── Protected Non-Negotiables (Project Contract) ──────────────────────────────
 protected_paths:
   - ".teamzero/constitution.yaml"
   - ".teamzero/PROJECT_CONTRACT.md"
@@ -342,7 +342,7 @@ def init_project(target_dir: Path, name: Optional[str] = None, force: bool = Fal
     for leaf in LEAF_DIRS:
         (org_dir / leaf).mkdir(parents=True, exist_ok=True)
 
-    # 1. Constitution with Praxist Autonomy Zones
+    # 1. Constitution with Autonomy Zones
     const_text = CONSTITUTION_TEMPLATE.format(
         org_name=project_name,
         version=TZ_VERSION,
@@ -352,7 +352,7 @@ def init_project(target_dir: Path, name: Optional[str] = None, force: bool = Fal
     )
     (org_dir / "constitution.yaml").write_text(const_text, encoding="utf-8")
 
-    # 2. Project Contract (Praxist Charter)
+    # 2. Project Contract (Founder Charter)
     contract_text = PROJECT_CONTRACT_TEMPLATE.format(
         org_name=project_name,
         version=TZ_VERSION,

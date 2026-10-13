@@ -38,7 +38,7 @@ def test_init_project_creates_structure_and_contract():
         ]:
             assert (org_dir / subdir).is_dir(), f"Missing directory: {subdir}"
 
-        # Check constitution contents for Praxist Zones of Autonomy
+        # Check constitution contents for TeamZero Zones of Autonomy
         const_data = yaml.safe_load((org_dir / "constitution.yaml").read_text(encoding="utf-8"))
         assert const_data["organization"]["name"] == "TestApp"
         assert "zones_of_autonomy" in const_data
