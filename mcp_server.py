@@ -1138,6 +1138,51 @@ def teamzero_ensemble_verify(
     return run_ensemble_verification(candidate_code, alternative_samples=alternative_samples)
 
 
+@mcp.tool()
+def teamzero_get_god_nodes(
+    top_n: int = 5,
+    client_id: str = "anon"
+) -> List[Dict[str, Any]]:
+    """Identifies the most-connected 'god nodes' (highest coupling abstractions) for merge gate risk-weighting (IMP-01)."""
+    _authorize_client(client_id, cost=1)
+    from teamzero.wiki import compute_god_nodes
+    return compute_god_nodes(top_n=top_n)
+
+
+@mcp.tool()
+def teamzero_get_surprising_connections(
+    client_id: str = "anon"
+) -> List[Dict[str, Any]]:
+    """Discovers unexpected cross-community or anomalous couplings between distant modules (IMP-01)."""
+    _authorize_client(client_id, cost=1)
+    from teamzero.wiki import find_surprising_connections
+    return find_surprising_connections()
+
+
+@mcp.tool()
+def teamzero_archaeology_scan(
+    target_dir: Optional[str] = None,
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Runs a Day 1 'Archaeology' discovery scan across the target repository (IMP-07)."""
+    _authorize_client(client_id, cost=2)
+    from teamzero.wiki import run_archaeology_scan
+    p = Path(target_dir) if target_dir else None
+    return run_archaeology_scan(target_dir=p)
+
+
+@mcp.tool()
+def teamzero_ai_redteam(
+    target_service: str = "refund_service",
+    client_id: str = "anon"
+) -> Dict[str, Any]:
+    """Runs Phase D Thinking Red Team Cracker: business logic exploits, invariant contradictions, and supply chain probes (IMP-05)."""
+    _authorize_client(client_id, cost=3)
+    from teamzero.redteam import AIRedTeamCracker
+    cracker = AIRedTeamCracker()
+    return cracker.execute_full_ai_redteam(target_service=target_service)
+
+
 
 
 

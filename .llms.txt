@@ -35,6 +35,7 @@
 - **peer_review** (`peer_review.py`): Peer Review Bot for TeamZero.
 - **racing** (`racing.py`): TeamZero Hypothesis Racing Engine ( Parallel Research Peers).
 - **ratchet** (`ratchet.py`): TeamZero Self-Healing Ratchet Engine (Improvement #10).
+- **redteam** (`redteam.py`): TeamZero AI Red Team Engine — Phase D Thinking Adversarial Cracker (IMP-05).
 - **refund_service** (`refund_service.py`): [REFERENCE EXAMPLE / TEMPLATE FIXTURE]
 - **smart_reader** (`smart_reader.py`): Smart AST-Aware, Symbol-Indexed, and Reference-Compressed File Reader.
 - **spec_compiler** (`spec_compiler.py`): Spec-to-Test Compiler & Spec Mutation Testing Engine.

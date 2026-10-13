@@ -462,3 +462,136 @@ def check_docs_drift(
             else "Code modified without updating documentation. Update .teamzero/memory/map/, an ADR, or run 'tz docs build'."
         )
     }
+
+
+# ── Graphify Knowledge Graph & Archaeology Integrations (IMP-01 & IMP-07) ────
+
+def compute_god_nodes(top_n: int = 5, root: Path = ROOT_DIR) -> List[Dict[str, Any]]:
+    """Identifies the most-connected 'god nodes' (highest coupling abstractions) across the repository.
+    
+    Inspired by Graphify's analyze.py: god_nodes() pattern.
+    High coupling abstractions are risk-weighted for Merge Gate audits.
+    """
+    map_dir = root / ".teamzero" / "memory" / "map"
+    if not map_dir.exists():
+        return []
+
+    coupling: Dict[str, Dict[str, Any]] = {}
+    for card in map_dir.glob("*.md"):
+        mod = card.stem
+        text = card.read_text(encoding="utf-8", errors="replace")
+        deps = []
+        dep_match = re.search(r"\*\*Dependencies\*\*:\s*([^\n]+)", text)
+        if dep_match:
+            deps = [d.strip(" `") for d in dep_match.group(1).split(",") if d.strip()]
+        
+        funcs = len(re.findall(r"- `([a-zA-Z0-9_]+)\(", text))
+        coupling[mod] = {
+            "module": mod,
+            "outgoing_deps_count": len(deps),
+            "incoming_references_count": 0,
+            "symbol_count": funcs,
+            "dependencies": deps
+        }
+
+    # Count incoming references
+    for mod, data in coupling.items():
+        for dep in data["dependencies"]:
+            if dep in coupling:
+                coupling[dep]["incoming_references_count"] += 1
+
+    # Score coupling: incoming * 2 + outgoing + symbols * 0.5
+    ranked = sorted(
+        coupling.values(),
+        key=lambda x: (x["incoming_references_count"] * 2 + x["outgoing_deps_count"] + x["symbol_count"] * 0.5),
+        reverse=True
+    )
+
+    return ranked[:top_n]
+
+
+def find_surprising_connections(root: Path = ROOT_DIR) -> List[Dict[str, Any]]:
+    """Discovers unexpected cross-community or anomalous couplings between distant modules.
+    
+    Inspired by Graphify's surprising_connections() pattern.
+    Flags surprising cross-domain imports (e.g. governance <-> refund or api <-> physics).
+    """
+    map_dir = root / ".teamzero" / "memory" / "map"
+    if not map_dir.exists():
+        return []
+
+    surprises = []
+    domain_tags = {
+        "physics": ["physics", "integrator", "kernel", "orbital", "opengl"],
+        "api": ["nasa", "tap", "fetch", "network", "api"],
+        "governance": ["governance", "gate", "trust", "payroll", "constitution"],
+        "tasks": ["tasks", "evaluator", "generation", "dag"],
+        "wiki": ["wiki", "smart_reader", "docs"]
+    }
+
+    def get_domain(name: str) -> str:
+        for domain, kws in domain_tags.items():
+            if any(k in name.lower() for k in kws):
+                return domain
+        return "general"
+
+    for card in map_dir.glob("*.md"):
+        mod = card.stem
+        src_domain = get_domain(mod)
+        text = card.read_text(encoding="utf-8", errors="replace")
+        dep_match = re.search(r"\*\*Dependencies\*\*:\s*([^\n]+)", text)
+        if not dep_match:
+            continue
+        deps = [d.strip(" `") for d in dep_match.group(1).split(",") if d.strip()]
+        for dep in deps:
+            tgt_domain = get_domain(dep)
+            if src_domain != "general" and tgt_domain != "general" and src_domain != tgt_domain:
+                surprises.append({
+                    "source_module": mod,
+                    "target_module": dep,
+                    "source_domain": src_domain,
+                    "target_domain": tgt_domain,
+                    "relationship": "CROSS_COMMUNITY_COUPLING",
+                    "risk_flag": f"Module '{mod}' ({src_domain}) directly couples with '{dep}' ({tgt_domain})."
+                })
+
+    return surprises
+
+
+def run_archaeology_scan(target_dir: Optional[Path] = None, root: Path = ROOT_DIR) -> Dict[str, Any]:
+    """Runs a Day 1 'Archaeology' discovery scan across the target repository (IMP-07).
+    
+    Synthesizes god-node coupling, surprising connections, ADR candidates, and trap candidates
+    to form the immediate Day 1 architectural baseline.
+    """
+    scan_root = target_dir or root
+    god_nodes = compute_god_nodes(top_n=5, root=scan_root)
+    surprises = find_surprising_connections(root=scan_root)
+
+    # Auto-extract recommended Founder Asks from high coupling god nodes
+    recommended_asks = []
+    for gn in god_nodes:
+        if gn["incoming_references_count"] >= 2:
+            recommended_asks.append({
+                "title": f"Establish strict interface contract for God-Node '{gn['module']}'",
+                "target_module": gn["module"],
+                "reason": f"Module has {gn['incoming_references_count']} incoming dependents and {gn['symbol_count']} symbols."
+            })
+
+    # Auto-extract recommended Trap Cards from cross-community surprises
+    recommended_traps = []
+    for s in surprises:
+        recommended_traps.append({
+            "trap_title": f"Unsanitized cross-boundary call: {s['source_module']} -> {s['target_module']}",
+            "mitigation": "Ensure parameter validation contract is asserted at boundary."
+        })
+
+    return {
+        "status": "ARCHAEOLOGY_SCAN_COMPLETE",
+        "scan_root": str(scan_root),
+        "god_nodes_identified": god_nodes,
+        "surprising_connections_count": len(surprises),
+        "surprising_connections": surprises,
+        "recommended_founder_asks": recommended_asks,
+        "recommended_trap_cards": recommended_traps
+    }

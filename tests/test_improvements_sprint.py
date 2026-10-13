@@ -76,3 +76,26 @@ def test_dynamic_gauntlet_execution():
     assert res["status"] in ["GAUNTLET_PASS", "GAUNTLET_FAIL"]
     assert res["total_dynamic_tests"] >= 3
     assert "receipt" in res
+
+
+def test_archaeology_and_god_nodes():
+    from teamzero.wiki import compute_god_nodes, find_surprising_connections, run_archaeology_scan
+    gods = compute_god_nodes(top_n=3)
+    assert isinstance(gods, list)
+
+    surprises = find_surprising_connections()
+    assert isinstance(surprises, list)
+
+    arch = run_archaeology_scan()
+    assert arch["status"] == "ARCHAEOLOGY_SCAN_COMPLETE"
+    assert "god_nodes_identified" in arch
+
+
+def test_ai_red_team_cracker():
+    from teamzero.redteam import AIRedTeamCracker
+    cracker = AIRedTeamCracker()
+    report = cracker.execute_full_ai_redteam(target_service="refund_service")
+    assert "verdict" in report
+    assert report["total_adversarial_findings"] >= 1
+    assert "receipt" in report
+    assert isinstance(report["exploits"], list)

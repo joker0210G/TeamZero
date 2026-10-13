@@ -365,8 +365,9 @@ def main(argv=None):
     task_p.add_argument("--subtasks", type=str, help="Comma-separated list of subtask titles to expand into")
 
     docs_p = subparsers.add_parser("docs", help="Living Code Wiki & Docs-as-Code engine")
-    docs_p.add_argument("action", nargs="?", default="status", choices=["build", "check", "bonsai", "status"], help="Documentation action to perform")
+    docs_p.add_argument("action", nargs="?", default="status", choices=["build", "check", "bonsai", "status", "archaeology"], help="Documentation action to perform")
     docs_p.add_argument("--fix", action="store_true", help="Auto-prune stale map cards and broken references")
+    docs_p.add_argument("--root", type=str, default=None, help="Root path for archaeology scan")
 
     read_p = subparsers.add_parser("read", help="AST-aware symbol reader, SQZ token compressor, and log filter")
     read_p.add_argument("mode", choices=["outline", "symbol", "file", "clean-log"], help="Read mode")
@@ -953,6 +954,27 @@ def main(argv=None):
                     print(f"     - Removed {c}")
             else:
                 print(" [OK] Wiki is clean and trimmed. Zero stale cards found.")
+            print("=" * 65)
+        elif args.action == "archaeology":
+            from teamzero.wiki import run_archaeology_scan
+            target = Path(args.root) if args.root else None
+            res = run_archaeology_scan(target_dir=target)
+            print("=" * 65)
+            print(" TeamZero Day 1 Repository Archaeology Scan (Graphify Style)")
+            print("=" * 65)
+            print(f" Scan Target: {res['scan_root']}")
+            print(f"\n [1] Top-Coupled God Nodes ({len(res['god_nodes_identified'])}):")
+            for gn in res["god_nodes_identified"]:
+                print(f"     * {gn['module']:<20} (Incoming: {gn['incoming_references_count']}, Outgoing: {gn['outgoing_deps_count']}, Symbols: {gn['symbol_count']})")
+            print(f"\n [2] Cross-Community Surprises ({res['surprising_connections_count']}):")
+            for s in res["surprising_connections"]:
+                print(f"     ! {s['risk_flag']}")
+            print(f"\n [3] Auto-Generated Founder Asks ({len(res['recommended_founder_asks'])}):")
+            for fa in res["recommended_founder_asks"]:
+                print(f"     ? {fa['title']}")
+            print(f"\n [4] Auto-Discovered Trap Cards ({len(res['recommended_trap_cards'])}):")
+            for tr in res["recommended_trap_cards"]:
+                print(f"     [TRAP] {tr['trap_title']}")
             print("=" * 65)
         else:  # status
             from teamzero.config import MAP_DIR, ADR_DIR, LLMS_TXT_FILE
